@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMenu();
     initContentPanel();
     initGame();
+    initOracle();
     initPlayer();
     loadData();
 });
@@ -626,8 +627,153 @@ function endGame(showSummary){
 }
 
 /* ---------------------------------------------------------
-Minimal audio player
+The Oracle — a hidden terminal reached from the corner prompt.
+No score, no fail state — just a small cryptic conversation
+with the site itself, for anyone curious enough to click it.
+Customize FILES / EVASIONS / the hidden-file payload below to
+make it sound like you.
 --------------------------------------------------------- */
+function initOracle(){
+    const trigger = document.getElementById('oracleToggle');
+    const panel = document.getElementById('oraclePanel');
+    const closeBtn = document.getElementById('oracleClose');
+    const output = document.getElementById('oracleOutput');
+    const input = document.getElementById('oracleInput');
+
+    if(!trigger || !panel) return;
+
+    let hasOpenedBefore = false;
+
+    const FILES = {
+        'notes.txt': "half of what's written here was true at 3am. the other half was true before that.",
+        'origin.log': "this started as a sketchbook. it became a place to keep things I'm not ready to say out loud.",
+    };
+    const HIDDEN_NAME = '.hidden';
+    const HIDDEN_ART =
+`      .  *  .    .
+   *    \\ | /   *
+ .   *  --*--  .   .
+   *    / | \\    *
+      .  *  .`;
+    const HIDDEN_LINE = "you weren't supposed to find this. good — that was always the point.";
+
+    const EVASIONS = [
+        "the archive declines to answer that.",
+        "some doors don't open just because you knocked.",
+        "not yet. maybe not ever.",
+        "that question answers itself, if you sit with it a while.",
+        "the oracle heard you. it just isn't in the mood.",
+    ];
+
+    function openOracle(){
+        panel.classList.add('show');
+        panel.setAttribute('aria-hidden', 'false');
+        trigger.setAttribute('aria-expanded', 'true');
+        if(!hasOpenedBefore){
+            hasOpenedBefore = true;
+            printLine('connection established — the archive is listening.', 'oracle-sys');
+            printLine("type `help` if you must. or don't. try `ls`.", 'oracle-sys');
+        }
+        setTimeout(() => input.focus(), 60);
+        scrollBottom();
+    }
+
+    function closeOracle(){
+        panel.classList.remove('show');
+        panel.setAttribute('aria-hidden', 'true');
+        trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    trigger.addEventListener('click', () => {
+        panel.classList.contains('show') ? closeOracle() : openOracle();
+    });
+    closeBtn.addEventListener('click', closeOracle);
+    document.addEventListener('keydown', e => {
+        if(e.key === 'Escape' && panel.classList.contains('show')) closeOracle();
+    });
+    output.addEventListener('click', () => input.focus());
+
+    function printLine(text, cls){
+        const line = document.createElement('div');
+        line.className = 'oracle-line' + (cls ? ' ' + cls : '');
+        line.textContent = text;
+        output.appendChild(line);
+    }
+
+    function printPre(text, cls){
+        const pre = document.createElement('pre');
+        pre.className = 'oracle-pre' + (cls ? ' ' + cls : '');
+        pre.textContent = text;
+        output.appendChild(pre);
+    }
+
+    function scrollBottom(){
+        output.scrollTop = output.scrollHeight;
+    }
+
+    function handleCommand(raw){
+        const cmd = raw.trim();
+        if(!cmd) return;
+        printLine('curator@atelier:~$ ' + cmd, 'oracle-echo');
+
+        const [base, ...rest] = cmd.split(/\s+/);
+        const arg = rest.filter(r => r !== '-a').join(' ');
+
+        switch(base.toLowerCase()){
+            case 'help':
+                printLine('the ones who need it rarely ask. still — try: ls, cat <file>, whoami, clear, exit.', 'oracle-sys');
+                break;
+            case 'whoami':
+                printLine('someone who builds rooms out of half-finished thoughts and calls it a portfolio.', 'oracle-sys');
+                break;
+            case 'ls':
+                if(rest.includes('-a')){
+                    printLine(Object.keys(FILES).join('  ') + '  ' + HIDDEN_NAME, 'oracle-sys');
+                } else {
+                    printLine(Object.keys(FILES).join('  ') + '  (2 more concealed — try `ls -a`)', 'oracle-sys');
+                }
+                break;
+            case 'cat': {
+                if(!arg){ printLine('cat: read what, exactly?', 'oracle-sys'); break; }
+                const name = arg.replace(/^\.\/?/, '');
+                if(name === HIDDEN_NAME){
+                    printPre(HIDDEN_ART, 'oracle-art');
+                    printLine(HIDDEN_LINE, 'oracle-secret');
+                } else if(FILES[name]){
+                    printLine(FILES[name], 'oracle-sys');
+                } else {
+                    printLine(`cat: ${arg}: no such fragment exists. yet.`, 'oracle-sys');
+                }
+                break;
+            }
+            case 'sudo':
+                printLine('nice try. the archive answers to no one.', 'oracle-sys');
+                break;
+            case 'date':
+                printLine('time moves differently in here. ask again outside.', 'oracle-sys');
+                break;
+            case 'clear':
+                output.innerHTML = '';
+                return;
+            case 'exit':
+            case 'close':
+                closeOracle();
+                return;
+            default:
+                printLine(EVASIONS[Math.floor(Math.random() * EVASIONS.length)], 'oracle-sys');
+        }
+        scrollBottom();
+    }
+
+    input.addEventListener('keydown', e => {
+        if(e.key === 'Enter'){
+            const val = input.value;
+            input.value = '';
+            handleCommand(val);
+        }
+    });
+}
+
 /* ---------------------------------------------------------
 Minimal audio player
 --------------------------------------------------------- */

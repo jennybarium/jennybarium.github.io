@@ -87,9 +87,24 @@
   <ul id="journalList" class="journal-list"></ul>
 </aside>
 
-<footer class="sitefoot">
-  <span>curator@atelier:~$</span>
-</footer>
+<div class="oracle-wrap">
+  <button id="oracleToggle" class="oracle-trigger" aria-haspopup="dialog" aria-expanded="false" aria-controls="oraclePanel">
+    <span>curator@atelier:~$</span><span class="oracle-caret" aria-hidden="true">_</span>
+  </button>
+  <div class="oracle-hint" id="oracleHint" role="tooltip">try: help · ls · whoami …</div>
+</div>
+
+<section id="oraclePanel" class="oracle-panel" aria-hidden="true" role="dialog" aria-label="Hidden terminal">
+  <div class="oracle-head">
+    <span class="oracle-head-title">curator@atelier — oracle</span>
+    <button id="oracleClose" class="oracle-close" aria-label="Close terminal">✕</button>
+  </div>
+  <div class="oracle-output" id="oracleOutput" aria-live="polite"></div>
+  <div class="oracle-inputline">
+    <span class="oracle-prompt">curator@atelier:~$</span>
+    <input id="oracleInput" class="oracle-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Terminal command input">
+  </div>
+</section>
 
 <!-- constellation recall: game launcher -->
 <button id="gameToggle" class="game-fab" aria-label="Play the constellation game" aria-haspopup="dialog">
