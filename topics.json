@@ -74,7 +74,10 @@
     "slug": "flags",
     "show": true,
     "category": "creative",
-    "content": "<p>A collection of flags — historical, fictional, vexillology rabbit holes.</p><div class=\"gallery-grid\"><div class=\"gallery-item\">flag_001</div><div class=\"gallery-item\">flag_002</div><div class=\"gallery-item\">flag_003</div></div>"
+    "content": [
+    { "type": "text", "html": "<p>This is a piece I finished last week. It explores the intersection of light and memory.</p>" },
+    { "type": "image", "key": "bariumana-flag-png", "caption": "Bariumana flag. Made by Jenny Barium in 2021", "alt": "colors inspired by nature and scientific concepts" }
+    ]
   },
   {
     "name": "Sözlerim",
