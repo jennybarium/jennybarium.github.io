@@ -3,21 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>:: Bariumana // dreamscape index</title>
+<title>:: Jenny Barium's personal website. from Bariumana!</title>
 <meta name="description" content="An artistic portfolio and creative diary, adrift in a bioluminescent constellation.">
 <link rel="icon" type="image/svg+xml" href="flag.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<!--
-  Telegram Mini App support.
-  This script is served only from Telegram's own CDN and is loaded
-  unconditionally per Telegram's integration guidelines, but every call
-  into it below is guarded — if the page is opened in a normal browser
-  window.Telegram will simply be undefined and all of it is skipped,
-  so the site behaves exactly as it does today outside Telegram.
--->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -78,12 +70,17 @@
 </nav>
 <div id="navScrim" class="nav-scrim"></div>
 
-<!-- graph -->
+<!-- graph + content -->
 <main>
   <section id="graphSection" class="graph-section" aria-label="Topic network graph">
     <svg id="graph" role="img" aria-label="Interactive constellation of topics. Click a node to open it."></svg>
     <div class="graph-hint">click / tap a node · drag to reposition · scroll to zoom</div>
   </section>
+
+  <!-- Full‑page topic container – hidden by default, shown when a hash is present -->
+  <div id="fullTopicContainer" style="display:none; padding: 80px 24px 40px; max-width: 820px; margin: 0 auto; min-height: 80vh;">
+    <!-- Content injected by JavaScript -->
+  </div>
 
   <!-- content panel (modal) -->
   <section id="contentPanel" class="content-panel" aria-hidden="true">

@@ -1,7 +1,7 @@
 {
   "_readme": "Map a short key to a real file path under assets/. Reference the key in topics.json content using the media shorthand — see README.md. Keep keys lowercase, no spaces, use dashes.",
 
-  "labradorite-1": "assets/images/rocks/labradorite-1.jpg",
+  "bariumana-flag-png": "assets/images/main/flag.png",
   "labradorite-2": "assets/images/rocks/labradorite-2.jpg",
 
   "julia-set-1": "assets/images/fractals/julia-set-1.png",

@@ -206,6 +206,10 @@ async function loadData(){
     renderNav();
     renderJournal();
     renderGraph();
+
+    // --- new ---
+    handleRoute();
+    window.addEventListener('hashchange', handleRoute);
 }
 
 /* ---------------------------------------------------------
@@ -373,6 +377,20 @@ function openContentPanel(topic){
     category.style.color = CATEGORY_COLORS[topic.category] || CATEGORY_COLORS.default;
     title.textContent = topic.name;
     body.innerHTML = renderTopicBody(topic);
+
+    // --- new: add a link to the full page ---
+    const fullLink = document.createElement('a');
+    fullLink.href = `#${topic.slug}`;
+    fullLink.textContent = 'Open full page';
+    fullLink.style.display = 'block';
+    fullLink.style.marginTop = '20px';
+    fullLink.style.color = 'var(--ochre)';
+    fullLink.style.fontFamily = 'var(--body)';
+    fullLink.style.fontSize = '14px';
+    fullLink.style.letterSpacing = '0.05em';
+    fullLink.style.textDecoration = 'none';
+    fullLink.style.borderBottom = '1px dotted var(--ochre)';
+    body.appendChild(fullLink);
 
     panel.classList.add('show');
     scrim.classList.add('show');
@@ -903,7 +921,63 @@ function pickNextNode(){
     } while(pool.length > 1 && choice.id === last);
     return choice.id;
 }
+/* ---------------------------------------------------------
+Full‑page topic view — standalone page within the same SPA
+--------------------------------------------------------- */
+function renderFullTopicPage(topic) {
+    const categoryColor = CATEGORY_COLORS[topic.category] || CATEGORY_COLORS.default;
+    return `
+        <div style="margin-bottom: 32px;">
+            <a href="#" onclick="history.back(); return false;" style="color: var(--ink-2); text-decoration: none; font-family: var(--body); font-size: 14px; letter-spacing: 0.05em;">← Back to graph</a>
+        </div>
+        <div class="content-eyebrow" style="color: ${categoryColor};">// ${topic.category || 'uncategorized'}</div>
+        <h1 style="font-family: var(--disp); font-size: clamp(2rem, 5vw, 3.2rem); margin: 0 0 24px; border-bottom: 1px solid var(--line); padding-bottom: 20px; color: var(--ink-0);">${topic.name}</h1>
+        <div class="content-body">${renderTopicBody(topic)}</div>
+    `;
+}
 
+function showFullTopic(slug) {
+    const topic = state.topics.find(t => t.slug === slug && t.show !== false);
+    if (!topic) {
+        // Invalid hash – go back to graph
+        window.location.hash = '';
+        return;
+    }
+
+    // Hide graph & journal, show full container
+    document.getElementById('graphSection').style.display = 'none';
+    document.getElementById('journalLog').style.display = 'none';
+    const container = document.getElementById('fullTopicContainer');
+    container.style.display = 'block';
+    container.innerHTML = renderFullTopicPage(topic);
+
+    // Update page title
+    document.title = `:: ${topic.name} — Bariumana`;
+    // Close any open popup/menu
+    if (document.getElementById('contentPanel').classList.contains('show')) {
+        window._closeContentPanel && window._closeContentPanel();
+    }
+    if (document.getElementById('navPanel').classList.contains('open')) {
+        window._closeMenu && window._closeMenu();
+    }
+}
+
+function showGraphView() {
+    document.getElementById('graphSection').style.display = 'block';
+    document.getElementById('journalLog').style.display = '';
+    document.getElementById('fullTopicContainer').style.display = 'none';
+    document.title = ':: Jenny Barium\'s personal website. from Bariumana!';
+    // Optionally re-render graph if needed? Already rendered.
+}
+
+function handleRoute() {
+    const hash = window.location.hash.slice(1); // remove '#'
+    if (hash) {
+        showFullTopic(hash);
+    } else {
+        showGraphView();
+    }
+}
 function nextRound(){
     // clear the previous round's drawing before showing the new pattern
     fadeTrailSlowly();
