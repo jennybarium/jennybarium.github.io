@@ -16,12 +16,30 @@ const state = {
     diary: [],
 };
 
+/* Shared reference to the live graph — the game reads/writes this */
+const graphState = { svg: null, nodeSel: null, nodes: [] };
+
+/* Constellation Recall — memory game state */
+const gameState = {
+    active: false,
+    sequence: [],
+    playerIndex: 0,
+    level: 1,
+    score: 0,
+    accepting: false,
+    highScore: parseInt(localStorage.getItem('atelier_game_highscore') || '0', 10) || 0,
+    responseTimer: null,
+    audioCtx: null,
+};
+const MIN_GAME_NODES = 4;
+
 /* ---------------------------------------------------------
 Boot
 --------------------------------------------------------- */
 document.addEventListener('DOMContentLoaded', () => {
     initMenu();
     initContentPanel();
+    initGame();
     initPlayer();
     loadData();
 });
@@ -163,8 +181,9 @@ function renderGraph(){
     const section = document.getElementById('graphSection');
     const svgEl = document.getElementById('graph');
     const topics = visibleTopics();
-    const width = section.clientWidth;
-    const height = section.clientHeight;
+    let width = section.clientWidth;
+    let height = section.clientHeight;
+    let pad = computePad(width, height);
 
     const svg = d3.select(svgEl)
         .attr('viewBox', [0, 0, width, height]);
@@ -210,10 +229,14 @@ function renderGraph(){
         .text(d => d.hub ? '' : d.name);
 
     nodeSel.filter(d => !d.hub)
-        .on('click', (event, d) => openContentPanel(d))
+        .on('click', (event, d) => {
+            if(gameState.active){ handleGameNodeClick(d); return; }
+            openContentPanel(d);
+        })
         .on('keydown', (event, d) => {
             if(event.key === 'Enter' || event.key === ' '){
                 event.preventDefault();
+                if(gameState.active){ handleGameNodeClick(d); return; }
                 openContentPanel(d);
             }
         })
@@ -224,10 +247,16 @@ function renderGraph(){
             d3.select(this).select('circle').transition().duration(200).attr('r', 14);
         });
 
+    graphState.svg = svg;
+    graphState.nodeSel = nodeSel;
+    graphState.nodes = nodes.filter(n => !n.hub);
+
+    const strengths = axisStrengths(width, height);
     const simulation = d3.forceSimulation(nodes)
         .force('link', d3.forceLink(links).id(d => d.id).distance(d => 140).strength(0.45))
         .force('charge', d3.forceManyBody().strength(-280))
-        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('x', d3.forceX(width / 2).strength(strengths.x))
+        .force('y', d3.forceY(height / 2).strength(strengths.y))
         .force('collision', d3.forceCollide().radius(d => (d.hub ? 45 : 36)))
         .alphaDecay(0.02)
         .on('tick', ticked);
@@ -235,6 +264,14 @@ function renderGraph(){
     simulationRef.current = simulation;
 
     function ticked(){
+        // hard rectangular bounds so the graph fills the display instead of
+        // drifting into a circular cluster
+        nodes.forEach(d => {
+            if(d.hub) return;
+            d.x = Math.max(pad.x, Math.min(width - pad.x, d.x));
+            d.y = Math.max(pad.y, Math.min(height - pad.y, d.y));
+        });
+
         linkSel
             .attr('x1', d => d.source.x)
             .attr('y1', d => d.source.y)
@@ -276,9 +313,13 @@ function renderGraph(){
 
     // resize handling
     window.addEventListener('resize', debounce(() => {
-        const w = section.clientWidth, h = section.clientHeight;
-        svg.attr('viewBox', [0, 0, w, h]);
-        simulation.force('center', d3.forceCenter(w / 2, h / 2));
+        width = section.clientWidth;
+        height = section.clientHeight;
+        pad = computePad(width, height);
+        svg.attr('viewBox', [0, 0, width, height]);
+        const s = axisStrengths(width, height);
+        simulation.force('x', d3.forceX(width / 2).strength(s.x));
+        simulation.force('y', d3.forceY(height / 2).strength(s.y));
         simulation.alpha(0.3).restart();
     }, 200));
 
@@ -306,6 +347,282 @@ function debounce(fn, wait){
         clearTimeout(t);
         t = setTimeout(() => fn(...args), wait);
     };
+}
+
+/* Pull strength per axis, tuned to the container's aspect ratio so the
+   constellation spreads into a rectangle rather than settling into a
+   circle. The shorter axis gets pulled in harder; the longer axis is
+   left looser so nodes can spread out and fill the width (or height). */
+function axisStrengths(w, h){
+    const ratio = w / h;
+    if(ratio >= 1){
+        return { x: 0.045, y: Math.min(0.18, 0.05 * ratio) };
+    }
+    return { x: Math.min(0.18, 0.05 / ratio), y: 0.045 };
+}
+
+function computePad(w, h){
+    return {
+        x: Math.min(90, Math.max(40, w * 0.07)),
+        y: Math.min(80, Math.max(40, h * 0.09)),
+    };
+}
+
+/* ---------------------------------------------------------
+Constellation Recall — a small memory game built from the
+live topic nodes. The graph flashes a growing pattern; the
+player repeats it by clicking the same nodes in order. Every
+completed round adds a star and quickens the pace, and the
+response window shrinks as the level climbs — one mistake
+(or a stalled response) ends the round.
+--------------------------------------------------------- */
+function initGame(){
+    const fab = document.getElementById('gameToggle');
+    const modal = document.getElementById('gameModal');
+    const scrim = document.getElementById('gameScrim');
+    const closeBtn = document.getElementById('closeGame');
+    const startBtn = document.getElementById('startGameBtn');
+    const retryBtn = document.getElementById('retryGameBtn');
+
+    if(!fab || !modal) return;
+
+    fab.addEventListener('click', openGameModal);
+    closeBtn.addEventListener('click', closeGameModal);
+    scrim.addEventListener('click', closeGameModal);
+    startBtn.addEventListener('click', startGame);
+    retryBtn.addEventListener('click', startGame);
+
+    document.addEventListener('keydown', e => {
+        if(e.key === 'Escape' && modal.classList.contains('show')) closeGameModal();
+    });
+
+    const hs = document.getElementById('gameHighScore');
+    if(hs) hs.textContent = gameState.highScore;
+}
+
+function openGameModal(){
+    const modal = document.getElementById('gameModal');
+    const scrim = document.getElementById('gameScrim');
+
+    document.getElementById('gameStartScreen').hidden = false;
+    document.getElementById('gameOverScreen').hidden = true;
+    document.getElementById('gameHighScore').textContent = gameState.highScore;
+
+    const warning = document.getElementById('gameWarning');
+    const startBtn = document.getElementById('startGameBtn');
+    if(graphState.nodes.length < MIN_GAME_NODES){
+        warning.hidden = false;
+        startBtn.disabled = true;
+    } else {
+        warning.hidden = true;
+        startBtn.disabled = false;
+    }
+
+    modal.classList.add('show');
+    scrim.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeGameModal(){
+    const modal = document.getElementById('gameModal');
+    const scrim = document.getElementById('gameScrim');
+    modal.classList.remove('show');
+    scrim.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    endGame(false);
+}
+
+function ensureAudio(){
+    if(!gameState.audioCtx){
+        try {
+            gameState.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch(err){ /* audio unavailable — game still works silently */ }
+    }
+    return gameState.audioCtx;
+}
+
+function playTone(freq, duration){
+    const ctx = ensureAudio();
+    if(!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration / 1000);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration / 1000 + 0.03);
+}
+
+function nodeFreq(id){
+    // stable tone per node id, spread across a pleasant range
+    let hash = 0;
+    for(let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+    return 220 + (hash % 12) * 55;
+}
+
+function flashNode(id, className, duration){
+    if(!graphState.nodeSel) return;
+    const sel = graphState.nodeSel.filter(d => d.id === id);
+    sel.classed(className, true);
+    setTimeout(() => sel.classed(className, false), duration);
+}
+
+function clearNodeStates(){
+    if(graphState.nodeSel){
+        graphState.nodeSel
+            .classed('game-flash', false)
+            .classed('game-correct', false)
+            .classed('game-wrong', false);
+    }
+}
+
+function startGame(){
+    if(graphState.nodes.length < MIN_GAME_NODES) return;
+    ensureAudio();
+
+    gameState.active = true;
+    gameState.sequence = [];
+    gameState.playerIndex = 0;
+    gameState.level = 1;
+    gameState.score = 0;
+    gameState.accepting = false;
+    clearTimeout(gameState.responseTimer);
+
+    const modal = document.getElementById('gameModal');
+    modal.classList.remove('show');
+    document.getElementById('gameScrim').classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+
+    document.getElementById('gameHud').hidden = false;
+    updateHud('Watch closely…');
+
+    nextRound();
+}
+
+function updateHud(status){
+    document.getElementById('gameLevel').textContent = gameState.level;
+    document.getElementById('gameScore').textContent = gameState.score;
+    if(status !== undefined) document.getElementById('gameStatus').textContent = status;
+}
+
+function pickNextNode(){
+    const pool = graphState.nodes;
+    const last = gameState.sequence[gameState.sequence.length - 1];
+    let choice;
+    do {
+        choice = pool[Math.floor(Math.random() * pool.length)];
+    } while(pool.length > 1 && choice.id === last);
+    return choice.id;
+}
+
+function nextRound(){
+    gameState.sequence.push(pickNextNode());
+    gameState.playerIndex = 0;
+    gameState.accepting = false;
+    updateHud('Watch closely…');
+    setTimeout(playSequence, 500);
+}
+
+function playSequence(){
+    if(!gameState.active) return;
+    const seq = gameState.sequence;
+    const flashDur = Math.max(260, 620 - gameState.level * 14);
+    const gap = Math.max(140, 320 - gameState.level * 10);
+
+    seq.forEach((id, i) => {
+        setTimeout(() => {
+            if(!gameState.active) return;
+            flashNode(id, 'game-flash', flashDur);
+            playTone(nodeFreq(id), flashDur);
+        }, i * (flashDur + gap));
+    });
+
+    const totalTime = seq.length * (flashDur + gap);
+    setTimeout(() => {
+        if(!gameState.active) return;
+        gameState.accepting = true;
+        updateHud('Your turn — repeat the pattern');
+        armResponseTimer();
+    }, totalTime + 150);
+}
+
+function armResponseTimer(){
+    clearTimeout(gameState.responseTimer);
+    const responseWindow = Math.max(650, 1900 - gameState.level * 35);
+    gameState.responseTimer = setTimeout(() => {
+        if(gameState.active && gameState.accepting) timeoutFail();
+    }, responseWindow);
+}
+
+function timeoutFail(){
+    const expected = gameState.sequence[gameState.playerIndex];
+    flashNode(expected, 'game-wrong', 500);
+    endGame(true);
+}
+
+function handleGameNodeClick(d){
+    if(!gameState.active || !gameState.accepting) return;
+    const expected = gameState.sequence[gameState.playerIndex];
+
+    if(d.id === expected){
+        flashNode(d.id, 'game-correct', 320);
+        playTone(nodeFreq(d.id), 200);
+        gameState.score += gameState.level * 10;
+        gameState.playerIndex += 1;
+        updateHud();
+
+        if(gameState.playerIndex >= gameState.sequence.length){
+            gameState.accepting = false;
+            clearTimeout(gameState.responseTimer);
+            gameState.score += 50;
+            gameState.level += 1;
+            updateHud('Pattern complete!');
+            setTimeout(nextRound, 700);
+        } else {
+            armResponseTimer();
+        }
+    } else {
+        gameState.accepting = false;
+        clearTimeout(gameState.responseTimer);
+        flashNode(expected, 'game-flash', 500);
+        flashNode(d.id, 'game-wrong', 500);
+        playTone(110, 350);
+        endGame(true);
+    }
+}
+
+function endGame(showSummary){
+    const wasActive = gameState.active;
+    gameState.active = false;
+    gameState.accepting = false;
+    clearTimeout(gameState.responseTimer);
+    document.getElementById('gameHud').hidden = true;
+    clearNodeStates();
+
+    if(!wasActive) return;
+
+    const isNewBest = gameState.score > gameState.highScore;
+    if(isNewBest){
+        gameState.highScore = gameState.score;
+        localStorage.setItem('atelier_game_highscore', String(gameState.highScore));
+    }
+
+    if(showSummary){
+        document.getElementById('finalLevel').textContent = gameState.level;
+        document.getElementById('finalScore').textContent = gameState.score;
+        document.getElementById('gameNewBest').hidden = !isNewBest;
+        document.getElementById('gameStartScreen').hidden = true;
+        document.getElementById('gameOverScreen').hidden = false;
+
+        const modal = document.getElementById('gameModal');
+        const scrim = document.getElementById('gameScrim');
+        modal.classList.add('show');
+        scrim.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+    }
 }
 
 /* ---------------------------------------------------------

@@ -91,6 +91,45 @@
   <span>curator@atelier:~$</span>
 </footer>
 
+<!-- constellation recall: game launcher -->
+<button id="gameToggle" class="game-fab" aria-label="Play the constellation game" aria-haspopup="dialog">
+  <span aria-hidden="true">✦</span>
+</button>
+
+<!-- game modal: start / game-over screens -->
+<section id="gameModal" class="content-panel game-modal" aria-hidden="true" role="dialog" aria-label="Constellation Recall">
+  <div class="content-panel-inner">
+    <button id="closeGame" class="close-btn" aria-label="Close game">✕</button>
+
+    <div id="gameStartScreen" class="game-screen">
+      <div class="content-eyebrow">// constellation recall</div>
+      <h2>Trace the Pattern</h2>
+      <p class="game-desc">The constellation will light up in sequence. Repeat it by clicking the same nodes, in order, on the graph behind this window. Each round adds one more star and quickens the pace — one wrong click, or a hesitation, ends the round.</p>
+      <div class="game-highscore">Best score: <span id="gameHighScore">0</span></div>
+      <button id="startGameBtn" class="game-btn">Begin</button>
+      <p id="gameWarning" class="game-warning hint" hidden>Not enough visible topics to play yet — at least 4 are needed.</p>
+    </div>
+
+    <div id="gameOverScreen" class="game-screen" hidden>
+      <div class="content-eyebrow">// pattern lost</div>
+      <h2>The Thread Broke</h2>
+      <p class="game-desc">You reached level <strong id="finalLevel">1</strong> with a score of <strong id="finalScore">0</strong>.</p>
+      <div class="game-highscore" id="gameNewBest" hidden>✦ New personal best! ✦</div>
+      <button id="retryGameBtn" class="game-btn">Play again</button>
+    </div>
+  </div>
+</section>
+<div id="gameScrim" class="content-scrim"></div>
+
+<!-- game HUD, shown over the graph while a round is active -->
+<div id="gameHud" class="game-hud" hidden aria-live="polite">
+  <div class="game-hud-row">
+    <span class="game-hud-item">Level <b id="gameLevel">1</b></span>
+    <span class="game-hud-item">Score <b id="gameScore">0</b></span>
+  </div>
+  <div class="game-hud-status" id="gameStatus">Watch closely…</div>
+</div>
+
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="script.js"></script>
 </body>
