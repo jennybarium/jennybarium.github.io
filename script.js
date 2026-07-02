@@ -19,7 +19,8 @@ const state = {
 /* Shared reference to the live graph — the game reads/writes this */
 const graphState = { svg: null, nodeSel: null, nodes: [] };
 
-/* Constellation Recall — memory game state */
+/* Constellation Draw — memory/drawing game state */
+const TRAIL_COLORS = ['#d4a373', '#b56576', '#81b29a', '#f2cc8f', '#e07a5f']; // ochre, rose, sage, gold, terra
 const gameState = {
     active: false,
     sequence: [],
@@ -30,6 +31,10 @@ const gameState = {
     highScore: parseInt(localStorage.getItem('atelier_game_highscore') || '0', 10) || 0,
     responseTimer: null,
     audioCtx: null,
+    dragging: false,
+    dragFromId: null,
+    trailSegments: [],   // { id, sel, createdAt, fading } — permanent-until-fade lines for current round
+    liveLineSel: null,   // the line currently following the pointer while dragging
 };
 const MIN_GAME_NODES = 4;
 
@@ -193,17 +198,11 @@ function renderGraph(){
 
     const zoomLayer = svg.append('g').attr('class', 'zoom-layer');
 
-    // central hub node representing "you" — everything routes through it
-    const hub = { id: 'hub', name: 'ATELIER', hub: true };
-    const nodes = [hub, ...topics.map(t => ({ ...t, id: t.slug }))];
-    const links = topics.map(t => ({ source: 'hub', target: t.slug }));
+    // topic nodes float freely — no central hub, no connecting links
+    const nodes = topics.map(t => ({ ...t, id: t.slug }));
 
-    const linkSel = zoomLayer.append('g')
-        .attr('class', 'links')
-        .selectAll('line')
-        .data(links)
-        .join('line')
-        .attr('class', 'link');
+    // layer for the game's colorful drawn trail (sits above links, below nodes)
+    const gameLayer = zoomLayer.append('g').attr('class', 'game-trail-layer');
 
     const nodeSel = zoomLayer.append('g')
         .attr('class', 'nodes')
@@ -211,33 +210,33 @@ function renderGraph(){
         .data(nodes)
         .join('g')
         .attr('class', 'node')
-        .attr('tabindex', d => d.hub ? -1 : 0)
-        .attr('role', d => d.hub ? null : 'button')
-        .attr('aria-label', d => d.hub ? null : `Open ${d.name}`)
+        .attr('tabindex', 0)
+        .attr('role', 'button')
+        .attr('aria-label', d => `Open ${d.name}`)
         .call(drag(simulationRef));
 
     nodeSel.append('circle')
-        .attr('r', d => d.hub ? 26 : 14)
-        .attr('fill', d => d.hub ? 'rgba(212,163,115,0.05)' : 'rgba(46,42,38,0.85)')
-        .attr('stroke', d => d.hub ? '#d4a373' : (CATEGORY_COLORS[d.category] || CATEGORY_COLORS.default))
-        .attr('stroke-width', d => d.hub ? 1.5 : 1.2)
+        .attr('r', 14)
+        .attr('fill', 'rgba(46,42,38,0.85)')
+        .attr('stroke', d => CATEGORY_COLORS[d.category] || CATEGORY_COLORS.default)
+        .attr('stroke-width', 1.2)
         .style('filter', 'drop-shadow(0 4px 6px rgba(0,0,0,0.4))'); // Soft shadow instead of neon glow
 
     nodeSel.append('text')
         .attr('class', 'node-label')
         .attr('text-anchor', 'middle')
-        .attr('dy', d => d.hub ? 42 : 28)
-        .text(d => d.hub ? '' : d.name);
+        .attr('dy', 28)
+        .text(d => d.name);
 
-    nodeSel.filter(d => !d.hub)
+    nodeSel
         .on('click', (event, d) => {
-            if(gameState.active){ handleGameNodeClick(d); return; }
+            if(gameState.active) return; // clicks don't drive the game anymore — dragging does
             openContentPanel(d);
         })
         .on('keydown', (event, d) => {
             if(event.key === 'Enter' || event.key === ' '){
                 event.preventDefault();
-                if(gameState.active){ handleGameNodeClick(d); return; }
+                if(gameState.active) return;
                 openContentPanel(d);
             }
         })
@@ -249,16 +248,17 @@ function renderGraph(){
         });
 
     graphState.svg = svg;
+    graphState.zoomLayer = zoomLayer;
+    graphState.gameLayer = gameLayer;
     graphState.nodeSel = nodeSel;
-    graphState.nodes = nodes.filter(n => !n.hub);
+    graphState.nodes = nodes;
 
     const strengths = axisStrengths(width, height);
     const simulation = d3.forceSimulation(nodes)
-        .force('link', d3.forceLink(links).id(d => d.id).distance(d => 140).strength(0.45))
         .force('charge', d3.forceManyBody().strength(-280))
         .force('x', d3.forceX(width / 2).strength(strengths.x))
         .force('y', d3.forceY(height / 2).strength(strengths.y))
-        .force('collision', d3.forceCollide().radius(d => (d.hub ? 45 : 36)))
+        .force('collision', d3.forceCollide().radius(36))
         .alphaDecay(0.02)
         .on('tick', ticked);
 
@@ -268,18 +268,12 @@ function renderGraph(){
         // hard rectangular bounds so the graph fills the display instead of
         // drifting into a circular cluster
         nodes.forEach(d => {
-            if(d.hub) return;
             d.x = Math.max(pad.x, Math.min(width - pad.x, d.x));
             d.y = Math.max(pad.y, Math.min(height - pad.y, d.y));
         });
 
-        linkSel
-            .attr('x1', d => d.source.x)
-            .attr('y1', d => d.source.y)
-            .attr('x2', d => d.target.x)
-            .attr('y2', d => d.target.y);
-
         nodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
+        if(typeof updateGameTrailPositions === 'function') updateGameTrailPositions();
     }
 
     // gentle ambient drift so the graph feels alive even at rest
@@ -293,7 +287,7 @@ function renderGraph(){
     svg.on('mousemove', (event) => {
         const [mx, my] = d3.pointer(event, zoomLayer.node());
         nodes.forEach(n => {
-            if(n.hub || n.fx != null) return;
+            if(n.fx != null) return;
             const dx = n.x - mx, dy = n.y - my;
             const dist = Math.sqrt(dx*dx + dy*dy);
             if(dist < 120 && dist > 0.1){
@@ -370,12 +364,15 @@ function computePad(w, h){
 }
 
 /* ---------------------------------------------------------
-Constellation Recall — a small memory game built from the
-live topic nodes. The graph flashes a growing pattern; the
-player repeats it by clicking the same nodes in order. Every
-completed round adds a star and quickens the pace, and the
-response window shrinks as the level climbs — one mistake
-(or a stalled response) ends the round.
+Constellation Draw — a small memory/drawing game built from
+the live topic nodes. The graph flashes a growing pattern;
+the player redraws it by dragging a line from node to node
+in the same order. Each segment drawn is rendered in its own
+color, so a completed pattern leaves a small colorful
+constellation behind before it fades. Every completed round
+adds a star and quickens the pace, and the response window
+shrinks as the level climbs — one wrong node under the
+pointer, or a stalled response, ends the round.
 --------------------------------------------------------- */
 function initGame(){
     const fab = document.getElementById('gameToggle');
@@ -399,6 +396,8 @@ function initGame(){
 
     const hs = document.getElementById('gameHighScore');
     if(hs) hs.textContent = gameState.highScore;
+
+    initDrawing();
 }
 
 function openGameModal(){
@@ -458,7 +457,7 @@ function playTone(freq, duration){
 }
 
 function nodeFreq(id){
-    // stable tone per node id, spread across a pleasant range
+    // stable tone per node id, spread across a pleasant piano-like range
     let hash = 0;
     for(let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
     return 220 + (hash % 12) * 55;
@@ -480,6 +479,168 @@ function clearNodeStates(){
     }
 }
 
+function nodeById(id){
+    return graphState.nodes.find(n => n.id === id);
+}
+
+/* ---- colored trail: the line drawing left behind by the player ---- */
+function trailColorForIndex(i){
+    return TRAIL_COLORS[i % TRAIL_COLORS.length];
+}
+
+function addTrailSegment(fromId, toId, colorIndex){
+    if(!graphState.gameLayer) return;
+    const from = nodeById(fromId);
+    const to = nodeById(toId);
+    if(!from || !to) return;
+
+    const color = trailColorForIndex(colorIndex);
+    const sel = graphState.gameLayer.append('line')
+        .attr('class', 'game-trail-segment')
+        .attr('x1', from.x).attr('y1', from.y)
+        .attr('x2', to.x).attr('y2', to.y)
+        .attr('stroke', color)
+        .style('filter', `drop-shadow(0 0 6px ${color})`)
+        .style('opacity', 0);
+
+    sel.transition().duration(120).style('opacity', 0.9);
+
+    const record = { fromId, toId, sel, createdAt: Date.now() };
+    gameState.trailSegments.push(record);
+    return record;
+}
+
+function updateGameTrailPositions(){
+    if(!gameState.trailSegments.length && !gameState.liveLineSel) return;
+    gameState.trailSegments.forEach(seg => {
+        const from = nodeById(seg.fromId);
+        const to = nodeById(seg.toId);
+        if(!from || !to || !seg.sel) return;
+        seg.sel.attr('x1', from.x).attr('y1', from.y).attr('x2', to.x).attr('y2', to.y);
+    });
+    if(gameState.liveLineSel && gameState.dragFromId){
+        const from = nodeById(gameState.dragFromId);
+        if(from) gameState.liveLineSel.attr('x1', from.x).attr('y1', from.y);
+    }
+}
+
+/* fades trail lines out slowly, one by one, oldest first */
+function fadeTrailSlowly(){
+    const segments = gameState.trailSegments.slice();
+    gameState.trailSegments = [];
+    segments.forEach((seg, i) => {
+        if(!seg.sel) return;
+        setTimeout(() => {
+            seg.sel.transition().duration(1800).style('opacity', 0).remove();
+        }, i * 260);
+    });
+}
+
+/* instantly wipes the trail — used when the game ends */
+function clearTrailImmediately(){
+    gameState.trailSegments.forEach(seg => { if(seg.sel) seg.sel.interrupt().remove(); });
+    gameState.trailSegments = [];
+    if(gameState.liveLineSel){ gameState.liveLineSel.remove(); gameState.liveLineSel = null; }
+}
+
+function startLiveLine(fromId){
+    if(!graphState.gameLayer) return;
+    const from = nodeById(fromId);
+    if(!from) return;
+    const color = trailColorForIndex(gameState.playerIndex);
+    gameState.liveLineSel = graphState.gameLayer.append('line')
+        .attr('class', 'game-trail-live')
+        .attr('x1', from.x).attr('y1', from.y)
+        .attr('x2', from.x).attr('y2', from.y)
+        .attr('stroke', color)
+        .style('filter', `drop-shadow(0 0 6px ${color})`)
+        .style('opacity', 0.85);
+}
+
+function updateLiveLineTo(x, y){
+    if(gameState.liveLineSel) gameState.liveLineSel.attr('x2', x).attr('y2', y);
+}
+
+function endLiveLine(){
+    if(gameState.liveLineSel){ gameState.liveLineSel.remove(); gameState.liveLineSel = null; }
+}
+
+/* ---- pointer-drag drawing interaction on the graph svg ---- */
+function initDrawing(){
+    const svgEl = document.getElementById('graph');
+    if(!svgEl || svgEl._drawInit) return;
+    svgEl._drawInit = true;
+
+    function svgPoint(event){
+        const pt = svgEl.createSVGPoint();
+        const touch = event.touches ? event.touches[0] : event;
+        pt.x = touch.clientX; pt.y = touch.clientY;
+        const zoomNode = graphState.zoomLayer ? graphState.zoomLayer.node() : svgEl;
+        const ctm = zoomNode.getScreenCTM();
+        if(!ctm) return { x: 0, y: 0 };
+        const local = pt.matrixTransform(ctm.inverse());
+        return { x: local.x, y: local.y };
+    }
+
+    function nodeUnderPoint(x, y){
+        let found = null;
+        graphState.nodes.forEach(n => {
+            const dx = n.x - x, dy = n.y - y;
+            if(Math.sqrt(dx*dx + dy*dy) <= 22) found = n;
+        });
+        return found;
+    }
+
+    function onDown(event){
+        if(!gameState.active || !gameState.accepting) return;
+        const p = svgPoint(event);
+        const n = nodeUnderPoint(p.x, p.y);
+        if(!n) return;
+        const expected = gameState.sequence[gameState.playerIndex];
+        if(n.id !== expected){
+            wrongNode(n.id);
+            return;
+        }
+        event.preventDefault();
+        gameState.dragging = true;
+        gameState.dragFromId = n.id;
+        registerCorrectNode(n.id);
+        startLiveLine(n.id);
+    }
+
+    function onMove(event){
+        if(!gameState.dragging) return;
+        const p = svgPoint(event);
+        updateLiveLineTo(p.x, p.y);
+        const n = nodeUnderPoint(p.x, p.y);
+        if(n && n.id !== gameState.dragFromId){
+            const expected = gameState.sequence[gameState.playerIndex];
+            if(n.id === expected){
+                event.preventDefault();
+                addTrailSegment(gameState.dragFromId, n.id, gameState.playerIndex - 1);
+                endLiveLine();
+                gameState.dragFromId = n.id;
+                registerCorrectNode(n.id);
+                if(gameState.dragging) startLiveLine(n.id);
+            } else if(n.id !== expected) {
+                wrongNode(n.id);
+            }
+        }
+    }
+
+    function onUp(){
+        if(!gameState.dragging) return;
+        gameState.dragging = false;
+        gameState.dragFromId = null;
+        endLiveLine();
+    }
+
+    svgEl.addEventListener('pointerdown', onDown);
+    svgEl.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    svgEl.addEventListener('pointerleave', () => { if(gameState.dragging) updateHud('Your turn — draw the pattern'); });
+}
+
 function startGame(){
     if(graphState.nodes.length < MIN_GAME_NODES) return;
     ensureAudio();
@@ -490,7 +651,10 @@ function startGame(){
     gameState.level = 1;
     gameState.score = 0;
     gameState.accepting = false;
+    gameState.dragging = false;
+    gameState.dragFromId = null;
     clearTimeout(gameState.responseTimer);
+    clearTrailImmediately();
 
     const modal = document.getElementById('gameModal');
     modal.classList.remove('show');
@@ -520,6 +684,8 @@ function pickNextNode(){
 }
 
 function nextRound(){
+    // clear the previous round's drawing before showing the new pattern
+    fadeTrailSlowly();
     gameState.sequence.push(pickNextNode());
     gameState.playerIndex = 0;
     gameState.accepting = false;
@@ -545,14 +711,14 @@ function playSequence(){
     setTimeout(() => {
         if(!gameState.active) return;
         gameState.accepting = true;
-        updateHud('Your turn — repeat the pattern');
+        updateHud('Your turn — draw the pattern');
         armResponseTimer();
     }, totalTime + 150);
 }
 
 function armResponseTimer(){
     clearTimeout(gameState.responseTimer);
-    const responseWindow = Math.max(650, 1900 - gameState.level * 35);
+    const responseWindow = Math.max(900, 2400 - gameState.level * 35);
     gameState.responseTimer = setTimeout(() => {
         if(gameState.active && gameState.accepting) timeoutFail();
     }, responseWindow);
@@ -564,44 +730,52 @@ function timeoutFail(){
     endGame(true);
 }
 
-function handleGameNodeClick(d){
-    if(!gameState.active || !gameState.accepting) return;
-    const expected = gameState.sequence[gameState.playerIndex];
+/* called when the player correctly lands on (or starts from) the next
+   expected node in the sequence — mid-drag */
+function registerCorrectNode(id){
+    flashNode(id, 'game-correct', 320);
+    playTone(nodeFreq(id), 200);
+    gameState.score += gameState.level * 10;
+    gameState.playerIndex += 1;
+    updateHud();
 
-    if(d.id === expected){
-        flashNode(d.id, 'game-correct', 320);
-        playTone(nodeFreq(d.id), 200);
-        gameState.score += gameState.level * 10;
-        gameState.playerIndex += 1;
-        updateHud();
-
-        if(gameState.playerIndex >= gameState.sequence.length){
-            gameState.accepting = false;
-            clearTimeout(gameState.responseTimer);
-            gameState.score += 50;
-            gameState.level += 1;
-            updateHud('Pattern complete!');
-            setTimeout(nextRound, 700);
-        } else {
-            armResponseTimer();
-        }
-    } else {
+    if(gameState.playerIndex >= gameState.sequence.length){
         gameState.accepting = false;
+        gameState.dragging = false;
         clearTimeout(gameState.responseTimer);
-        flashNode(expected, 'game-flash', 500);
-        flashNode(d.id, 'game-wrong', 500);
-        playTone(110, 350);
-        endGame(true);
+        endLiveLine();
+        gameState.score += 50;
+        gameState.level += 1;
+        updateHud('Pattern complete!');
+        setTimeout(nextRound, 900);
+    } else {
+        armResponseTimer();
     }
+}
+
+function wrongNode(id){
+    gameState.accepting = false;
+    gameState.dragging = false;
+    gameState.dragFromId = null;
+    clearTimeout(gameState.responseTimer);
+    endLiveLine();
+    const expected = gameState.sequence[gameState.playerIndex];
+    flashNode(expected, 'game-flash', 500);
+    flashNode(id, 'game-wrong', 500);
+    playTone(110, 350);
+    endGame(true);
 }
 
 function endGame(showSummary){
     const wasActive = gameState.active;
     gameState.active = false;
     gameState.accepting = false;
+    gameState.dragging = false;
+    gameState.dragFromId = null;
     clearTimeout(gameState.responseTimer);
     document.getElementById('gameHud').hidden = true;
     clearNodeStates();
+    clearTrailImmediately(); // wipe the drawing when the game ends
 
     if(!wasActive) return;
 

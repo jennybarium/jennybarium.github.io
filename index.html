@@ -106,20 +106,20 @@
   </div>
 </section>
 
-<!-- constellation recall: game launcher -->
+<!-- constellation draw: game launcher -->
 <button id="gameToggle" class="game-fab" aria-label="Play the constellation game" aria-haspopup="dialog">
   <span aria-hidden="true">✦</span>
 </button>
 
 <!-- game modal: start / game-over screens -->
-<section id="gameModal" class="content-panel game-modal" aria-hidden="true" role="dialog" aria-label="Constellation Recall">
+<section id="gameModal" class="content-panel game-modal" aria-hidden="true" role="dialog" aria-label="Constellation Draw">
   <div class="content-panel-inner">
     <button id="closeGame" class="close-btn" aria-label="Close game">✕</button>
 
     <div id="gameStartScreen" class="game-screen">
-      <div class="content-eyebrow">// constellation recall</div>
+      <div class="content-eyebrow">// constellation draw</div>
       <h2>Trace the Pattern</h2>
-      <p class="game-desc">The constellation will light up in sequence. Repeat it by clicking the same nodes, in order, on the graph behind this window. Each round adds one more star and quickens the pace — one wrong click, or a hesitation, ends the round.</p>
+      <p class="game-desc">The constellation will light up in sequence. Redraw it by dragging a line from node to node, in order, on the graph behind this window — each segment you draw takes on its own color. Each round adds one more star and quickens the pace — one wrong node under your cursor, or a hesitation, ends the round.</p>
       <div class="game-highscore">Best score: <span id="gameHighScore">0</span></div>
       <button id="startGameBtn" class="game-btn">Begin</button>
       <p id="gameWarning" class="game-warning hint" hidden>Not enough visible topics to play yet — at least 4 are needed.</p>

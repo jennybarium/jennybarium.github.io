@@ -416,7 +416,16 @@ button { font-family: inherit; cursor: pointer; }
 }
 .node circle { cursor: pointer; transition: all 0.3s ease; }
 .node:hover .node-label { fill: var(--ink-0); font-weight: bold; }
-.link { stroke: var(--line); stroke-width: 0.5; stroke-dasharray: 2 4; opacity: 0.6; } /* Thread-like links */
+
+/* Constellation Draw — colorful trail left behind as the player drags
+   a line from node to node. Segments fade out slowly after a round. */
+.game-trail-segment,
+.game-trail-live {
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.game-trail-live { stroke-dasharray: 1 0; }
 
 /* Content Panel - Gallery Placard / Art Book */
 .content-scrim {
@@ -619,7 +628,7 @@ The Oracle — a hidden terminal, opened from the corner prompt
 .cat-personal { --cat: var(--rose); }
 
 /* ---------------------------------------------------------
-Constellation Recall — game
+Constellation Draw — game
 --------------------------------------------------------- */
 .game-fab {
   position: fixed;
