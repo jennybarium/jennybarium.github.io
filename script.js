@@ -326,6 +326,7 @@ async function initPlayer(){
   const modeToggle = document.getElementById('modeToggle');
   const progressBar = document.getElementById('progressBar');
   const progress = document.getElementById('trackProgress');
+  const buffered = document.getElementById('trackBuffered');
   const timeCurrent = document.getElementById('timeCurrent');
   const timeDuration = document.getElementById('timeDuration');
   const volume = document.getElementById('volume');
@@ -390,6 +391,8 @@ async function initPlayer(){
     title.textContent = item.title;
     sourceSelect.value = index;
     progress.style.width = '0%';
+    buffered.style.width = '0%';
+    title.classList.remove('is-buffering');
     timeCurrent.textContent = '0:00';
     timeDuration.textContent = mode === 'radio' ? 'LIVE' : '0:00';
     progressBar.style.cursor = mode === 'radio' ? 'default' : 'pointer';
@@ -402,10 +405,18 @@ async function initPlayer(){
     }
   }
 
+  function pickNextIndex(list){
+    if(list.length <= 1) return 0;
+    if(!shuffle) return (index + 1) % list.length;
+    let i;
+    do{ i = Math.floor(Math.random() * list.length); } while(i === index);
+    return i;
+  }
+
   function next(){
     const list = currentList();
-    const i = shuffle ? Math.floor(Math.random() * list.length) : index + 1;
-    loadTrack(i, !audio.paused);
+    if(!list.length) return;
+    loadTrack(pickNextIndex(list), !audio.paused);
   }
   function prev(){
     loadTrack(index - 1, !audio.paused);
@@ -450,6 +461,40 @@ async function initPlayer(){
       timeDuration.textContent = formatTime(audio.duration);
     }
   });
+
+  audio.addEventListener('progress', () => {
+    if(audio.duration && isFinite(audio.duration) && audio.buffered.length){
+      const end = audio.buffered.end(audio.buffered.length - 1);
+      buffered.style.width = `${(end / audio.duration) * 100}%`;
+    }
+  });
+
+  // slow/interrupted networks: show a "buffering" state instead of looking frozen
+  audio.addEventListener('waiting', () => {
+    title.classList.add('is-buffering');
+  });
+  audio.addEventListener('playing', () => {
+    title.classList.remove('is-buffering');
+  });
+  audio.addEventListener('canplay', () => {
+    title.classList.remove('is-buffering');
+  });
+
+  // auto-retry once on network error (common on flaky connections / dropped radio streams)
+  let retried = false;
+  audio.addEventListener('error', () => {
+    if(retried) {
+      title.textContent = mode === 'radio' ? 'stream unavailable' : "couldn't load track";
+      return;
+    }
+    retried = true;
+    title.classList.add('is-buffering');
+    setTimeout(() => {
+      audio.load();
+      if(!audio.paused || mode === 'radio') audio.play().catch(() => {});
+    }, 1500);
+  });
+  audio.addEventListener('loadstart', () => { retried = false; });
 
   progressBar.addEventListener('click', (e) => {
     if(mode === 'radio' || !audio.duration || !isFinite(audio.duration)) return;

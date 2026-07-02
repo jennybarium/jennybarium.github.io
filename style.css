@@ -156,9 +156,16 @@ body::before{
   height:5px; background:var(--line); margin-top:4px; border-radius:2px; overflow:hidden;
   cursor:pointer; position:relative;
 }
+.player-bar-buffered{
+  height:100%; width:0%; background:rgba(233,241,242,0.18);
+  position:absolute; left:0; top:0; pointer-events:none;
+}
 .player-bar-fill{
   height:100%; width:0%; background:var(--cyan); box-shadow:0 0 6px var(--cyan);
-  pointer-events:none;
+  pointer-events:none; position:relative; z-index:1;
+}
+.player-title.is-buffering::after{
+  content:" · buffering…"; color:var(--ink-2); font-style:italic;
 }
 .player-times{
   display:flex; justify-content:space-between;
