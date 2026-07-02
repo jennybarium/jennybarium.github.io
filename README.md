@@ -1,83 +1,115 @@
-# NODE — personal index
+# Editing this site's content
 
-A single-page personal diary/portfolio: a live, force-directed node graph (D3 v7) as the front door, a hidden slide-out menu, a minimal audio player, and a journal-log stream pulled from `diary.json`. Pure HTML/CSS/vanilla JS — no build step, no server.
+Nothing here requires touching `script.js`, `style.css`, or `index.html`.
+Three files control everything:
 
-## Files
+- `topics.json` — every "page"/node in the graph
+- `diary.json` — the sketchbook journal entries
+- `media.json` — every image/audio/video file, in one place
 
-```
-index.html      structure, fuck
-style.css       cyberpunk-terminal styling
-script.js       graph, nav, modal, diary stream, player
-topics.json     every topic node — edit this to change the site
-diary.json      journal log entries
-assets/audio/   drop your mp3 here
-```
+---
 
-## Customizing content
+## Adding or removing a topic (page)
 
-Everything on the page is generated from **topics.json**. Each entry looks like:
+Open `topics.json`. It's a list of objects like:
 
 ```json
 {
-  "name": "My music & covers",
-  "slug": "music",
+  "name": "Rocks & Crystals",
+  "slug": "rocks",
   "show": true,
-  "category": "creative",
-  "content": "<p>HTML or plain text for the detail panel.</p>"
+  "category": "personal",
+  "content": "<p>Some HTML here</p>"
 }
 ```
 
-- `show: false` instantly removes the topic from the graph **and** the hidden menu — nothing to delete, just flip the flag.
-- `category` drives node color and grouping. Built-in categories: `creative` (magenta), `systems` (blue), `science` (amber), `personal` (green). Anything else falls back to cyan. Add new categories by adding a color to `CATEGORY_COLORS` at the top of `script.js`.
-- `content` accepts HTML, so you can drop in `<img>` tags, links, or the included `.gallery-grid` / `.gallery-item` classes for a quick image grid — just replace the placeholder divs with real `<img>` tags:
+- **To add a page**: copy one of these blocks, paste it into the list,
+  change `name`, `slug` (must be unique, no spaces), `category`
+  (`creative` / `systems` / `science` / `personal` — controls the color),
+  and `content`.
+- **To remove a page**: delete its block. Or, if you just want to hide it
+  temporarily without deleting it, set `"show": false` — it disappears
+  from the graph and menu but stays in the file.
+- **Order doesn't matter.** The graph lays nodes out automatically.
 
-```html
-<div class="gallery-grid">
-  <div class="gallery-item"><img src="assets/img/photo1.jpg" alt="..."></div>
-</div>
+---
+
+## Adding media (images, audio, video)
+
+### Step 1 — register the file in `media.json`
+
+```json
+{
+  "labradorite-1": "assets/images/rocks/labradorite-1.jpg",
+  "cover-track-1": "assets/audio/covers/track-1.mp3"
+}
 ```
 
-Add `img.gallery-item, .gallery-item img { width:100%; height:100%; object-fit:cover; }` to `style.css` if you switch to real images.
+Left side = a short key you'll reuse. Right side = the real path under
+`assets/`. This is the **only** place a file path is ever written.
+If you move or rename a file, you only fix it here — every topic that
+uses that key updates automatically.
 
-## Updating the diary
-
-Edit **diary.json** — an array of `{ "date": "YYYY-MM-DD", "title": "...", "text": "..." }`. Entries are sorted newest-first automatically; no need to reorder them yourself.
-
-## Swapping the audio track
-
-1. Put your mp3 in `assets/audio/` (any filename).
-2. In `index.html`, update the `<source>` tag inside `#audio`:
-   ```html
-   <source src="assets/audio/your-track.mp3" type="audio/mpeg">
-   ```
-3. Optionally edit the placeholder title text `#trackTitle` in `index.html`, or set it from `script.js` after load.
-
-## Running locally
-
-Just open `index.html` in a browser. If your browser blocks `fetch()` on `file://` URLs (some do, for JSON), run a tiny local server instead:
-
-```bash
-python3 -m http.server 8000
-# then open http://localhost:8000
+Suggested folders (adjust to match what you actually have):
+```
+assets/images/<category>/...
+assets/audio/<category>/...
+assets/video/<category>/...
 ```
 
-## Deploying to GitHub Pages
+### Step 2 — reference the key in a topic
 
-1. Push this folder to a GitHub repo (root, or a `/docs` folder — your choice).
-2. Repo → **Settings → Pages** → Source: deploy from branch → pick `main` and the folder you used.
-3. Wait a minute, then visit the URL GitHub gives you.
+There are two ways to write a topic's `content`:
 
-No build step, no dependencies to install — D3 loads from a CDN (`https://d3js.org/d3.v7.min.js`) and Google Fonts loads `JetBrains Mono` / `Space Mono`. Both are fetched once and cached by the browser, so the page keeps working offline after the first load (aside from the fonts/D3 needing that first fetch — vendor them locally into an `/assets` folder if you need a fully offline first load too).
+**A) Plain HTML string** (works today, no change needed) — use this for
+text-only topics, or if you're comfortable writing `<img>` tags by hand.
 
-## Notes on the graph
+**B) A list of content blocks** — easier when mixing text with media,
+since you never write HTML for the media parts:
 
-- The center "hub" node is just a visual anchor — it isn't a real topic and isn't clickable.
-- Nodes drift gently on their own and are gently pushed by the mouse/finger — this is `d3-force` re-heating itself on an interval plus a small custom repulsion force in `script.js` (`renderGraph`).
-- Drag any node to pin it in place while dragging; it releases back into the simulation on drop.
-- Scroll/pinch to zoom, drag empty space to pan.
+```json
+{
+  "name": "Rocks & Crystals",
+  "slug": "rocks",
+  "show": true,
+  "category": "personal",
+  "content": [
+    { "type": "text", "html": "<p>A small physical collection.</p>" },
+    { "type": "image", "key": "labradorite-1", "caption": "Found June 2026" },
+    { "type": "audio", "key": "cover-track-1" },
+    { "type": "video", "key": "site-demo-clip", "caption": "Quick walkthrough" }
+  ]
+}
+```
 
-## Accessibility
+Block types: `text`, `image`, `audio`, `video`.
+Optional fields per media block: `caption`, `alt` (images only).
 
-- Nodes are keyboard-focusable (`tabindex`) and open with Enter/Space.
-- The hidden menu and content panel both close on `Escape` and trap focus visually within a clear border.
-- Respects `prefers-reduced-motion` by killing animation durations sitewide.
+You can freely mix as many text/image/audio/video blocks as you want,
+in any order — the panel just renders them top to bottom.
+
+---
+
+## Adding a diary entry
+
+Open `diary.json`, add a block to the list:
+
+```json
+{
+  "date": "2026-07-02",
+  "title": "short title",
+  "text": "What happened, a sentence or two."
+}
+```
+
+Newest-dated entry always shows first automatically.
+
+---
+
+## Quick checklist when adding a new piece of content
+
+1. Drop the file into the right `assets/...` subfolder.
+2. Add one line to `media.json` (key → path).
+3. Reference that key in a topic's content block (or write raw HTML if
+   you prefer).
+4. Save. Refresh the page — no build step, no server restart needed.
