@@ -311,213 +311,211 @@ function debounce(fn, wait){
 /* ---------------------------------------------------------
 Minimal audio player
 --------------------------------------------------------- */
-async function initPlayer(){
-    const audio = document.getElementById('audio');
-    const playBtn = document.getElementById('playBtn');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const shuffleBtn = document.getElementById('shuffleBtn');
-    const modeToggle = document.getElementById('modeToggle');
-    const progressBar = document.getElementById('progressBar');
-    const progress = document.getElementById('trackProgress');
-    const buffered = document.getElementById('trackBuffered');
-    const timeCurrent = document.getElementById('timeCurrent');
-    const timeDuration = document.getElementById('timeDuration');
-    const volume = document.getElementById('volume');
-    const title = document.getElementById('trackTitle');
-    const sourceSelect = document.getElementById('sourceSelect');
+/* ---------------------------------------------------------
+Minimal audio player
+--------------------------------------------------------- */
+async function initPlayer() {
+  const audio = document.getElementById('audio');
+  const playBtn = document.getElementById('playBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const modeToggle = document.getElementById('modeToggle');
+  const progressBar = document.getElementById('progressBar');
+  const progress = document.getElementById('trackProgress');
+  const buffered = document.getElementById('trackBuffered');
+  const timeCurrent = document.getElementById('timeCurrent');
+  const timeDuration = document.getElementById('timeDuration');
+  const volume = document.getElementById('volume');
+  const title = document.getElementById('trackTitle');
+  const sourceSelect = document.getElementById('sourceSelect');
+
+  audio.volume = parseFloat(volume.value);
+  let library = { music: [], radio: [] };
+  let mode = 'music'; // 'music' or 'radio'
+  let index = 0;
+  let shuffle = false;
+
+  try {
+    const res = await fetch('assets/audio/playlist.json');
+    const data = await res.json();
+    library.music = data.tracks || [];
+    library.radio = data.radio || [];
+  } catch (err) {
+    console.error('Failed to load playlist.json', err);
+  }
+
+  function currentList() { return library[mode]; }
+
+  function formatTime(sec) {
+    if (!isFinite(sec)) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  function renderSourceSelect() {
+    sourceSelect.innerHTML = '';
+    currentList().forEach((item, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = item.title || 'Unknown Track';
+      sourceSelect.appendChild(opt);
+    });
+  }
+
+  function setMode(newMode, autoplay) {
+    mode = newMode;
+    modeToggle.textContent = mode === 'radio' ? '📡' : '🎵';
+    modeToggle.classList.toggle('is-radio', mode === 'radio');
+    modeToggle.setAttribute('aria-label', mode === 'radio' ? 'Switch to music' : 'Switch to radio');
     
+    [prevBtn, nextBtn, shuffleBtn].forEach(b => b.disabled = mode === 'radio');
+    renderSourceSelect();
+    audio.pause();
+    playBtn.textContent = '▶';
+    playBtn.setAttribute('aria-label', 'Play');
+    
+    if (currentList().length) loadTrack(0, autoplay);
+    else title.textContent = mode === 'radio' ? 'no stations' : 'no tracks';
+  }
+
+  function loadTrack(i, autoplay) {
+    const list = currentList();
+    if (!list.length) return;
+    
+    index = (i + list.length) % list.length;
+    const item = list[index];
+    
+    audio.src = item.src;
+    title.textContent = item.title || 'Unknown Track';
+    sourceSelect.value = index;
+    
+    progress.style.width = '0%';
+    buffered.style.width = '0%';
+    title.classList.remove('is-buffering');
+    
+    timeCurrent.textContent = '0:00';
+    timeDuration.textContent = mode === 'radio' ? 'LIVE' : '0:00';
+    progressBar.style.cursor = mode === 'radio' ? 'default' : 'pointer';
+    
+    if (autoplay) {
+      audio.play().catch((err) => {
+        console.error('Playback error:', err);
+        title.textContent = 'playback error';
+      });
+      playBtn.textContent = '❚❚';
+      playBtn.setAttribute('aria-label', 'Pause');
+    }
+  }
+
+  function pickNextIndex(list) {
+    if (list.length <= 1) return 0;
+    if (!shuffle) return (index + 1) % list.length;
+    let i;
+    do { i = Math.floor(Math.random() * list.length); } while (i === index);
+    return i;
+  }
+
+  function next() {
+    const list = currentList();
+    if (!list.length) return;
+    loadTrack(pickNextIndex(list), !audio.paused);
+  }
+
+  function prev() {
+    loadTrack(index - 1, !audio.paused);
+  }
+
+  setMode('music', false);
+
+  modeToggle.addEventListener('click', () => {
+    setMode(mode === 'music' ? 'radio' : 'music', true);
+  });
+
+  playBtn.addEventListener('click', () => {
+    if (!currentList().length) return;
+    if (audio.paused) {
+      audio.play().catch((err) => {
+        console.error('Playback error:', err);
+        title.textContent = 'playback error';
+      });
+      playBtn.textContent = '❚❚';
+      playBtn.setAttribute('aria-label', 'Pause');
+    } else {
+      audio.pause();
+      playBtn.textContent = '▶';
+      playBtn.setAttribute('aria-label', 'Play');
+    }
+  });
+
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  shuffleBtn.addEventListener('click', () => {
+    shuffle = !shuffle;
+    shuffleBtn.style.color = shuffle ? 'var(--magenta)' : '';
+  });
+
+  sourceSelect.addEventListener('change', () => {
+    loadTrack(parseInt(sourceSelect.value, 10), true);
+  });
+
+  audio.addEventListener('timeupdate', () => {
+    if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+      const percent = (audio.currentTime / audio.duration) * 100;
+      progress.style.width = `${percent}%`;
+      timeCurrent.textContent = formatTime(audio.currentTime);
+      timeDuration.textContent = formatTime(audio.duration);
+    }
+  });
+
+  audio.addEventListener('progress', () => {
+    if (audio.duration && isFinite(audio.duration) && audio.buffered.length > 0) {
+      const end = audio.buffered.end(audio.buffered.length - 1);
+      const percent = (end / audio.duration) * 100;
+      buffered.style.width = `${percent}%`;
+    }
+  });
+
+  audio.addEventListener('waiting', () => {
+    title.classList.add('is-buffering');
+  });
+
+  audio.addEventListener('playing', () => {
+    title.classList.remove('is-buffering');
+  });
+
+  audio.addEventListener('canplay', () => {
+    title.classList.remove('is-buffering');
+  });
+
+  let retried = false;
+  audio.addEventListener('error', () => {
+    if (retried) {
+      title.textContent = mode === 'radio' ? 'stream unavailable' : "couldn't load track";
+      return;
+    }
+    retried = true;
+    title.classList.add('is-buffering');
+    setTimeout(() => {
+      audio.load();
+      if (!audio.paused || mode === 'radio') audio.play().catch(() => {});
+    }, 1500);
+  });
+
+  audio.addEventListener('loadstart', () => { retried = false; });
+
+  progressBar.addEventListener('click', (e) => {
+    if (mode === 'radio' || !audio.duration || !isFinite(audio.duration)) return;
+    const rect = progressBar.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = ratio * audio.duration;
+  });
+
+  audio.addEventListener('ended', next);
+
+  volume.addEventListener('input', () => {
     audio.volume = parseFloat(volume.value);
-    let library = { music: [], radio: [] };
-    let mode = 'music';
-    let index = 0;
-    let shuffle = false;
-    
-    try{
-        const res = await fetch('assets/audio/playlist.json');
-        const data = await res.json();
-        library.music = data.tracks || [];
-        library.radio = data.radio || [];
-    } catch(err){
-        console.error('Failed to load playlist.json', err);
-    }
-    
-    function currentList(){ return library[mode]; }
-    
-    function formatTime(sec){
-        if(!isFinite(sec)) return '0:00';
-        const m = Math.floor(sec / 60);
-        const s = Math.floor(sec % 60).toString().padStart(2, '0');
-        return `${m}:${s}`;
-    }
-    
-    function renderSourceSelect(){
-        sourceSelect.innerHTML = '';
-        currentList().forEach((item, i) => {
-            const opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = item.title || 'Unknown Track';
-            sourceSelect.appendChild(opt);
-        });
-    }
-    
-    function setMode(newMode, autoplay){
-        mode = newMode;
-        modeToggle.textContent = mode === 'radio' ? '📡' : '🎵';
-        modeToggle.classList.toggle('is-radio', mode === 'radio');
-        modeToggle.setAttribute('aria-label', mode === 'radio' ? 'Switch to music' : 'Switch to radio');
-        
-        [prevBtn, nextBtn, shuffleBtn].forEach(b => b.disabled = mode === 'radio');
-        renderSourceSelect();
-        audio.pause();
-        playBtn.textContent = '▶';
-        playBtn.setAttribute('aria-label', 'Play');
-        
-        if(currentList().length) loadTrack(0, autoplay);
-        else title.textContent = mode === 'radio' ? 'no stations' : 'no tracks';
-    }
-    
-    function loadTrack(i, autoplay){
-        const list = currentList();
-        if(!list.length) return;
-        
-        index = (i + list.length) % list.length;
-        const item = list[index];
-        
-        audio.src = item.src;
-        title.textContent = item.title || 'Unknown Track';
-        sourceSelect.value = index;
-        
-        progress.style.width = '0%';
-        buffered.style.width = '0%';
-        title.classList.remove('is-buffering');
-        
-        timeCurrent.textContent = '0:00';
-        timeDuration.textContent = mode === 'radio' ? 'LIVE' : '0:00';
-        progressBar.style.cursor = mode === 'radio' ? 'default' : 'pointer';
-        
-        if(autoplay){
-            audio.play().catch((err) => {
-                console.error('Playback error:', err);
-                title.textContent = 'playback error';
-            });
-            playBtn.textContent = '❚❚';
-            playBtn.setAttribute('aria-label', 'Pause');
-        }
-    }
-    
-    function pickNextIndex(list){
-        if(list.length <= 1) return 0;
-        if(!shuffle) return (index + 1) % list.length;
-        let i;
-        do{ i = Math.floor(Math.random() * list.length); } while(i === index);
-        return i;
-    }
-    
-    function next(){
-        const list = currentList();
-        if(!list.length) return;
-        loadTrack(pickNextIndex(list), !audio.paused);
-    }
-    
-    function prev(){
-        loadTrack(index - 1, !audio.paused);
-    }
-    
-    setMode('music', false);
-    
-    modeToggle.addEventListener('click', () => {
-        setMode(mode === 'music' ? 'radio' : 'music', true);
-    });
-    
-    playBtn.addEventListener('click', () => {
-        if(!currentList().length) return;
-        if(audio.paused){
-            audio.play().catch((err) => {
-                console.error('Playback error:', err);
-                title.textContent = 'playback error';
-            });
-            playBtn.textContent = '❚❚';
-            playBtn.setAttribute('aria-label', 'Pause');
-        } else {
-            audio.pause();
-            playBtn.textContent = '▶';
-            playBtn.setAttribute('aria-label', 'Play');
-        }
-    });
-    
-    nextBtn.addEventListener('click', next);
-    prevBtn.addEventListener('click', prev);
-    
-    shuffleBtn.addEventListener('click', () => {
-        shuffle = !shuffle;
-        shuffleBtn.style.color = shuffle ? 'var(--magenta)' : '';
-    });
-    
-    sourceSelect.addEventListener('change', () => {
-        loadTrack(parseInt(sourceSelect.value, 10), true);
-    });
-    
-    // Update progress bar on timeupdate
-    audio.addEventListener('timeupdate', () => {
-        if(audio.duration && isFinite(audio.duration) && audio.duration > 0){
-            const percent = (audio.currentTime / audio.duration) * 100;
-            progress.style.width = percent + '%';
-            timeCurrent.textContent = formatTime(audio.currentTime);
-            timeDuration.textContent = formatTime(audio.duration);
-        }
-    });
-    
-    // Update buffered progress
-    audio.addEventListener('progress', () => {
-        if(audio.duration && isFinite(audio.duration) && audio.buffered.length > 0){
-            const end = audio.buffered.end(audio.buffered.length - 1);
-            const percent = (end / audio.duration) * 100;
-            buffered.style.width = percent + '%';
-        }
-    });
-    
-    // Show buffering state
-    audio.addEventListener('waiting', () => {
-        title.classList.add('is-buffering');
-    });
-    
-    audio.addEventListener('playing', () => {
-        title.classList.remove('is-buffering');
-    });
-    
-    audio.addEventListener('canplay', () => {
-        title.classList.remove('is-buffering');
-    });
-    
-    // Auto-retry on error
-    let retried = false;
-    audio.addEventListener('error', () => {
-        if(retried) {
-            title.textContent = mode === 'radio' ? 'stream unavailable' : "couldn't load track";
-            return;
-        }
-        retried = true;
-        title.classList.add('is-buffering');
-        setTimeout(() => {
-            audio.load();
-            if(!audio.paused || mode === 'radio') audio.play().catch(() => {});
-        }, 1500);
-    });
-    
-    audio.addEventListener('loadstart', () => { retried = false; });
-    
-    // Seek on progress bar click
-    progressBar.addEventListener('click', (e) => {
-        if(mode === 'radio' || !audio.duration || !isFinite(audio.duration)) return;
-        const rect = progressBar.getBoundingClientRect();
-        const ratio = (e.clientX - rect.left) / rect.width;
-        audio.currentTime = ratio * audio.duration;
-    });
-    
-    audio.addEventListener('ended', next);
-    
-    volume.addEventListener('input', () => {
-        audio.volume = parseFloat(volume.value);
-    });
+  });
 }
