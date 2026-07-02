@@ -376,14 +376,14 @@ function openContentPanel(topic){
     category.textContent = topic.category ? `// ${topic.category}` : '// uncategorized';
     category.style.color = CATEGORY_COLORS[topic.category] || CATEGORY_COLORS.default;
     title.textContent = topic.name;
-    body.innerHTML = renderTopicBody(topic);
+    body.innerHTML = '';
 
-    // --- new: add a link to the full page ---
+    // --- add a link to the full page (placed at the top) ---
     const fullLink = document.createElement('a');
     fullLink.href = `#${topic.slug}`;
     fullLink.textContent = 'Open full page';
     fullLink.style.display = 'block';
-    fullLink.style.marginTop = '20px';
+    fullLink.style.marginBottom = '20px';
     fullLink.style.color = 'var(--ochre)';
     fullLink.style.fontFamily = 'var(--body)';
     fullLink.style.fontSize = '14px';
@@ -391,6 +391,10 @@ function openContentPanel(topic){
     fullLink.style.textDecoration = 'none';
     fullLink.style.borderBottom = '1px dotted var(--ochre)';
     body.appendChild(fullLink);
+
+    const bodyContent = document.createElement('div');
+    bodyContent.innerHTML = renderTopicBody(topic);
+    body.appendChild(bodyContent);
 
     panel.classList.add('show');
     scrim.classList.add('show');
@@ -960,6 +964,14 @@ function showFullTopic(slug) {
     if (document.getElementById('navPanel').classList.contains('open')) {
         window._closeMenu && window._closeMenu();
     }
+
+    // Hide the constellation game FAB on full topic pages
+    const gameFab = document.getElementById('gameToggle');
+    if (gameFab) gameFab.style.display = 'none';
+    const gameModal = document.getElementById('gameModal');
+    if (gameModal && gameModal.classList.contains('show')) {
+        window._closeGameModal ? window._closeGameModal() : closeGameModal();
+    }
 }
 
 function showGraphView() {
@@ -968,6 +980,10 @@ function showGraphView() {
     document.getElementById('fullTopicContainer').style.display = 'none';
     document.title = ':: Jenny Barium\'s personal website. from Bariumana!';
     // Optionally re-render graph if needed? Already rendered.
+
+    // Show the constellation game FAB again on the main page
+    const gameFab = document.getElementById('gameToggle');
+    if (gameFab) gameFab.style.display = '';
 }
 
 function handleRoute() {
