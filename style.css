@@ -716,6 +716,22 @@ button { font-family: inherit; cursor: pointer; }
 }
 .content-body .hint { color: var(--ink-2); font-size: 13px; font-style: italic; }
 
+/* Media blocks — images/audio/video inserted via mediaTag() */
+.content-body .media-figure {
+  margin: 0 0 22px; padding: 0;
+}
+.content-body .media-figure img,
+.content-body .media-figure video {
+  display: block; width: 100%; height: auto;
+  border-radius: 6px; border: 1px solid var(--line);
+}
+.content-body .media-figure audio {
+  display: block; width: 100%;
+}
+.content-body .media-figure figcaption {
+  margin-top: 8px; font-size: 13px; color: var(--ink-2); font-style: italic;
+}
+
 /* Journal - Sketchbook Ledger */
 .journal-log {
   position: fixed; right: 0; top: 0; bottom: 0; z-index: 100;

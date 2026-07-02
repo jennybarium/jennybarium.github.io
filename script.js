@@ -14,6 +14,7 @@ const CATEGORY_COLORS = {
 const state = {
     topics: [],
     diary: [],
+    media: {},
 };
 
 /* Shared reference to the live graph — the game reads/writes this */
@@ -181,22 +182,111 @@ function initAuroraScene(){
     scene.appendChild(frag);
 }
 
-async function loadData(){
+async function loadJSON(path, fallback){
     try{
-        const [topicsRes, diaryRes] = await Promise.all([
-            fetch('topics.json'),
-            fetch('diary.json')
-        ]);
-        state.topics = await topicsRes.json();
-        state.diary  = await diaryRes.json();
+        const res = await fetch(path);
+        if(!res.ok) throw new Error(`${path}: ${res.status}`);
+        return await res.json();
     } catch(err){
-        console.error('Failed to load data', err);
-        state.topics = [];
-        state.diary = [];
+        console.error(`Failed to load ${path}`, err);
+        return fallback;
     }
+}
+
+async function loadData(){
+    const [topics, diary, media] = await Promise.all([
+        loadJSON('topics.json', []),
+        loadJSON('diary.json', []),
+        loadJSON('media.json', {})
+    ]);
+    state.topics = topics;
+    state.diary  = diary;
+    state.media  = media;
+
     renderNav();
     renderJournal();
     renderGraph();
+}
+
+/* ---------------------------------------------------------
+Media registry helpers
+Every media file gets one entry in media.json: "key": "path".
+Topics reference media by key, never by raw path, so moving or
+renaming a file only means editing media.json in one place.
+--------------------------------------------------------- */
+
+/** Resolve a media key to its real path. Returns '' (and warns) if missing. */
+function M(key){
+    const path = state.media[key];
+    if(!path){
+        console.warn(`media.json has no entry for key "${key}"`);
+        return '';
+    }
+    return path;
+}
+
+/**
+ * Build an HTML string for a media block, so topic content never needs
+ * raw <img>/<audio>/<video> tags. Usage inside a topic's `content`
+ * string (or content array — see renderTopicBody):
+ *   mediaTag('image', 'labradorite-1', { alt: 'Labradorite specimen' })
+ *
+ * type: 'image' | 'audio' | 'video'
+ * key:  a key from media.json
+ * opts: { alt, caption, controls (default true), autoplay, loop, muted, width, height }
+ */
+function mediaTag(type, key, opts = {}){
+    const src = M(key);
+    if(!src) return '<p class="hint">Missing media: ' + escapeHtml(key) + '</p>';
+
+    const caption = opts.caption
+        ? `<figcaption>${escapeHtml(opts.caption)}</figcaption>` : '';
+
+    if(type === 'image'){
+        const alt = escapeHtml(opts.alt || opts.caption || key);
+        return `<figure class="media-figure"><img src="${src}" alt="${alt}" loading="lazy">${caption}</figure>`;
+    }
+    if(type === 'audio'){
+        const controls = opts.controls === false ? '' : 'controls';
+        return `<figure class="media-figure"><audio src="${src}" ${controls} ${opts.loop ? 'loop' : ''} preload="metadata"></audio>${caption}</figure>`;
+    }
+    if(type === 'video'){
+        const controls = opts.controls === false ? '' : 'controls';
+        return `<figure class="media-figure"><video src="${src}" ${controls} ${opts.autoplay ? 'autoplay' : ''} ${opts.loop ? 'loop' : ''} ${opts.muted ? 'muted' : ''} playsinline></video>${caption}</figure>`;
+    }
+    return '';
+}
+
+/**
+ * Renders a topic's `content` field. Supports two forms:
+ *  - String: raw HTML (existing topics keep working unchanged).
+ *  - Array of blocks: e.g.
+ *      [
+ *        { "type": "text",  "html": "<p>Some paragraph</p>" },
+ *        { "type": "image", "key": "labradorite-1", "caption": "Found June 2026" },
+ *        { "type": "audio", "key": "cover-track-1", "caption": "Rough take, take 3" },
+ *        { "type": "video", "key": "site-demo-clip" }
+ *      ]
+ *    This is the easy path for adding media without writing HTML.
+ */
+function renderTopicBody(topic){
+    const content = topic.content;
+
+    if(typeof content === 'string' || !content){
+        return content || '<p class="hint">No content yet.</p>';
+    }
+
+    if(Array.isArray(content)){
+        return content.map(block => {
+            if(block.type === 'text')  return block.html || '';
+            if(block.type === 'image') return mediaTag('image', block.key, block);
+            if(block.type === 'audio') return mediaTag('audio', block.key, block);
+            if(block.type === 'video') return mediaTag('video', block.key, block);
+            return '';
+        }).join('');
+    }
+
+    return '<p class="hint">No content yet.</p>';
 }
 
 /* ---------------------------------------------------------
@@ -282,7 +372,7 @@ function openContentPanel(topic){
     category.textContent = topic.category ? `// ${topic.category}` : '// uncategorized';
     category.style.color = CATEGORY_COLORS[topic.category] || CATEGORY_COLORS.default;
     title.textContent = topic.name;
-    body.innerHTML = topic.content || '<p class="hint">No content yet.</p>';
+    body.innerHTML = renderTopicBody(topic);
 
     panel.classList.add('show');
     scrim.classList.add('show');
