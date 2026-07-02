@@ -454,7 +454,7 @@ async function initPlayer() {
 
   shuffleBtn.addEventListener('click', () => {
     shuffle = !shuffle;
-    shuffleBtn.style.color = shuffle ? 'var(--cyan)' : '';
+    shuffleBtn.classList.toggle('is-active', shuffle);
   });
 
   sourceSelect.addEventListener('change', () => {

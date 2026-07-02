@@ -111,31 +111,31 @@ button { font-family: inherit; cursor: pointer; }
 .player {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: rgba(13, 17, 20, 0.85);
+  gap: 14px;
+  background: rgba(36, 33, 30, 0.9);
   border: 1px solid var(--line);
   border-radius: 24px;
-  padding: 8px 16px;
+  padding: 8px 18px 8px 10px;
   backdrop-filter: blur(8px);
-  max-width: min(65vw, 420px);
+  max-width: min(65vw, 440px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .player-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex-shrink: 0;
 }
 
 .player-btn {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   flex: none;
   border-radius: 50%;
-  border: 1px solid var(--cyan);
-  background: rgba(77, 255, 242, 0.08);
-  color: var(--cyan);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-1);
   font-size: 12px;
   display: flex;
   align-items: center;
@@ -145,13 +145,26 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 .player-btn:hover {
-  background: rgba(77, 255, 242, 0.2);
-  transform: scale(1.05);
+  background: rgba(212, 163, 115, 0.1);
+  border-color: var(--ochre);
+  color: var(--ochre);
 }
 
 .player-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+#playBtn {
+  border-color: var(--ochre);
+  color: var(--ochre);
+  background: rgba(212, 163, 115, 0.08);
+}
+#playBtn:hover { background: rgba(212, 163, 115, 0.18); }
+
+#shuffleBtn.is-active {
+  color: var(--terra);
+  border-color: var(--terra);
 }
 
 .player-meta {
@@ -191,7 +204,7 @@ button { font-family: inherit; cursor: pointer; }
 .player-bar-buffered {
   height: 100%;
   width: 0%;
-  background: rgba(233, 241, 242, 0.15);
+  background: rgba(244, 235, 208, 0.15);
   position: absolute;
   left: 0;
   top: 0;
@@ -202,8 +215,8 @@ button { font-family: inherit; cursor: pointer; }
 .player-bar-fill {
   height: 100%;
   width: 0%;
-  background: var(--cyan);
-  box-shadow: 0 0 4px var(--cyan);
+  background: var(--ochre);
+  box-shadow: 0 0 4px var(--ochre);
   pointer-events: none;
   position: absolute;
   left: 0;
@@ -229,32 +242,39 @@ button { font-family: inherit; cursor: pointer; }
 
 .player-mode {
   font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   border: 1px solid var(--line);
   color: var(--ink-1);
   background: transparent;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex: none;
 }
 
 .player-mode:hover {
-  border-color: var(--cyan);
-  color: var(--cyan);
+  border-color: var(--ochre);
+  color: var(--ochre);
 }
 
 .player-mode.is-radio {
-  border-color: var(--magenta);
-  color: var(--magenta);
+  border-color: var(--rose);
+  color: var(--rose);
+  background: rgba(181, 101, 118, 0.1);
 }
 
 .player-source {
   background: var(--bg-2);
   color: var(--ink-1);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 12px;
   font-size: 10px;
-  padding: 3px 6px;
+  padding: 4px 8px;
   max-width: 120px;
   font-family: var(--body);
   cursor: pointer;
@@ -262,48 +282,67 @@ button { font-family: inherit; cursor: pointer; }
 
 .player-volume {
   width: 60px;
-  accent-color: var(--cyan);
+  accent-color: var(--ochre);
   cursor: pointer;
 }
 
-/* Mobile: Two-row layout */
+/* Mobile: dedicated compact media bar, replaces the topbar entirely on small screens */
 @media (max-width: 768px) {
+  .topbar {
+    padding: 0;
+    background: rgba(26, 24, 21, 0.97);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand { display: none; }
+
+  .menu-toggle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+    width: 36px;
+    height: 36px;
+  }
+
   .player {
+    width: 100%;
     max-width: 100%;
     border-radius: 0;
-    border-left: none;
-    border-right: none;
-    padding: 10px 16px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+    border: none;
+    box-shadow: none;
+    padding: 10px 14px 10px 56px;
+    flex-wrap: wrap;
+    gap: 6px 10px;
   }
 
   .player-controls {
-    justify-content: center;
+    order: 1;
   }
 
   .player-meta {
+    order: 2;
+    flex-basis: 100%;
     width: 100%;
   }
 
   .player-extras {
-    justify-content: center;
-    flex-wrap: wrap;
+    order: 3;
+    margin-left: auto;
   }
 
   .player-source {
-    max-width: 100%;
-    flex: 1;
+    display: none; /* dropdown hidden on phones — use prev/next instead to keep it clean */
   }
 
   .player-volume {
-    width: 80px;
+    display: none; /* system volume is used on mobile; keeps the bar uncluttered */
   }
 }
 
-@media (max-width: 480px) {
-  .player-btn {
+@media (max-width: 420px) {
+  .player-btn, .player-mode {
     width: 28px;
     height: 28px;
     font-size: 10px;
@@ -315,15 +354,6 @@ button { font-family: inherit; cursor: pointer; }
 
   .player-times {
     font-size: 8px;
-  }
-
-  .player-mode {
-    font-size: 11px;
-    padding: 3px 6px;
-  }
-
-  .player-source {
-    font-size: 9px;
   }
 }
 
