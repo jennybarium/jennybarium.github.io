@@ -317,20 +317,59 @@ function debounce(fn, wait){
 /* ---------------------------------------------------------
    Minimal audio player
    --------------------------------------------------------- */
-function initPlayer(){
+async function initPlayer(){
   const audio = document.getElementById('audio');
   const playBtn = document.getElementById('playBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
   const progress = document.getElementById('trackProgress');
   const volume = document.getElementById('volume');
   const title = document.getElementById('trackTitle');
 
   audio.volume = parseFloat(volume.value);
 
+  let playlist = [];
+  let index = 0;
+  let shuffle = false;
+
+  try{
+    const res = await fetch('assets/audio/playlist.json');
+    playlist = await res.json();
+  } catch(err){
+    console.error('Failed to load playlist.json', err);
+  }
+
+  function loadTrack(i, autoplay){
+    if(!playlist.length){
+      title.textContent = 'no tracks — edit assets/audio/playlist.json';
+      return;
+    }
+    index = (i + playlist.length) % playlist.length;
+    audio.src = `assets/audio/${playlist[index]}`;
+    title.textContent = playlist[index];
+    progress.style.width = '0%';
+    if(autoplay){
+      audio.play().catch(() => {});
+      playBtn.textContent = '❚❚';
+      playBtn.setAttribute('aria-label', 'Pause');
+    }
+  }
+
+  function next(){
+    const i = shuffle ? Math.floor(Math.random() * playlist.length) : index + 1;
+    loadTrack(i, !audio.paused);
+  }
+  function prev(){
+    loadTrack(index - 1, !audio.paused);
+  }
+
+  if(playlist.length) loadTrack(0, false);
+
   playBtn.addEventListener('click', () => {
+    if(!playlist.length) return;
     if(audio.paused){
-      audio.play().catch(() => {
-        title.textContent = 'no track loaded — swap src in index.html';
-      });
+      audio.play().catch(() => {});
       playBtn.textContent = '❚❚';
       playBtn.setAttribute('aria-label', 'Pause');
     } else {
@@ -340,17 +379,20 @@ function initPlayer(){
     }
   });
 
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+  shuffleBtn.addEventListener('click', () => {
+    shuffle = !shuffle;
+    shuffleBtn.style.color = shuffle ? 'var(--magenta)' : '';
+  });
+
   audio.addEventListener('timeupdate', () => {
     if(audio.duration){
       progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
     }
   });
 
-  audio.addEventListener('ended', () => {
-    playBtn.textContent = '▶';
-    playBtn.setAttribute('aria-label', 'Play');
-    progress.style.width = '0%';
-  });
+  audio.addEventListener('ended', next);
 
   volume.addEventListener('input', () => {
     audio.volume = parseFloat(volume.value);
