@@ -1,0 +1,16 @@
+<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Top-Left Triangle (Red) -->
+  <polygon points="0,0 500,0 0,300" fill="#FF0000" />
+  
+  <!-- Top-Right Triangle (Blue) -->
+  <polygon points="500,0 1000,0 1000,300" fill="#1A1AF0" />
+  
+  <!-- Bottom-Left Triangle (Green) -->
+  <polygon points="0,300 500,600 0,600" fill="#45FF30" />
+  
+  <!-- Bottom-Right Triangle (Purple/Magenta) -->
+  <polygon points="500,600 1000,300 1000,600" fill="#CF5EFA" />
+
+  <!-- Center Diamond (Yellow) -->
+  <polygon points="500,0 1000,300 500,600 0,300" fill="#FFF01F" />
+</svg>

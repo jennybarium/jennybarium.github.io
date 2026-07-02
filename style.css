@@ -1,36 +1,36 @@
 /* =========================================================
-ATELIER — creative index
-Tokens
-bg-0   #1a1815   deep warm charcoal (gallery wall)
-bg-1   #24211e   dark wood / panel
-bg-2   #2e2a26   canvas / raised surface
-line   #423c37   soft graphite / charcoal lines
-ochre  #d4a373   primary accent — gold/brass
-rose   #b56576   secondary accent — muted clay/rose
-sage   #81b29a   tertiary accent — systems
-gold   #f2cc8f   category: science
-terra  #e07a5f   category: creative
-ink-0  #f4ebd0   warm parchment (primary text)
-ink-1  #b8b09e   faded ink (secondary text)
-ink-2  #7a7365   charcoal dust (muted text)
-font display: 'Playfair Display', Georgia, serif
-font body:    'Lora', 'Book Antiqua', serif
+BARIUMANA — dreamscape index
+Tokens — glacial / bioluminescent / volcanic-night palette
+bg-0    #0b0f16   deep glacial night (near-black indigo)
+bg-1    #121a26   frozen basalt panel
+bg-2    #1a2536   raised surface / lagoon
+line    #2a3a52   faint ice-vein line
+iris    #9d8cff   primary accent — violet iris / bioluminescence
+coral   #ff8fb1   secondary accent — volcanic coral bloom
+kelp    #6fe3c4   tertiary accent — kelp / arctic teal
+amber   #ffd27a   category: science — geyser amber
+bloom   #ff6f9c   category: creative — deep coral bloom
+ink-0   #f2eefc   moon-milk (primary text)
+ink-1   #b7b3d6   dusk lilac (secondary text)
+ink-2   #6f6c8c   drifting fog (muted text)
+font display: 'Cormorant Garamond', Georgia, serif — soft, elongated, painterly
+font body:    'Jost', 'Nunito Sans', sans-serif — airy, rounded, whispering
 ========================================================= */
 :root {
-  --bg-0: #1a1815;
-  --bg-1: #24211e;
-  --bg-2: #2e2a26;
-  --line: #423c37;
-  --ochre: #d4a373;
-  --rose: #b56576;
-  --sage: #81b29a;
-  --gold: #f2cc8f;
-  --terra: #e07a5f;
-  --ink-0: #f4ebd0;
-  --ink-1: #b8b09e;
-  --ink-2: #7a7365;
-  --disp: 'Playfair Display', Georgia, serif;
-  --body: 'Lora', 'Book Antiqua', serif;
+  --bg-0: #0b0f16;
+  --bg-1: #121a26;
+  --bg-2: #1a2536;
+  --line: #2a3a52;
+  --ochre: #9d8cff;
+  --rose: #ff8fb1;
+  --sage: #6fe3c4;
+  --gold: #ffd27a;
+  --terra: #ff6f9c;
+  --ink-0: #f2eefc;
+  --ink-1: #b7b3d6;
+  --ink-2: #6f6c8c;
+  --disp: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  --body: 'Jost', 'Nunito Sans', -apple-system, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -43,8 +43,18 @@ body {
   font-family: var(--body);
   overflow-x: hidden;
   position: relative;
-  /* Subtle paper/canvas grain instead of matrix noise */
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+  background-image:
+    radial-gradient(ellipse 60% 45% at 15% 8%, rgba(157,140,255,0.16), transparent 60%),
+    radial-gradient(ellipse 55% 40% at 88% 18%, rgba(255,143,177,0.12), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 95%, rgba(111,227,196,0.10), transparent 65%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+  animation: aurora-drift 40s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift {
+  0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+  100% { background-position: 4% 3%, 96% 4%, 54% 96%, 0 0; }
 }
 
 ::selection { background: var(--rose); color: var(--bg-0); }
@@ -71,17 +81,23 @@ button { font-family: inherit; cursor: pointer; }
 /* Elegant Topbar */
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-  display: flex; align-items: center; gap: 20px;
+  display: flex; align-items: center;
   padding: 18px 24px;
-  background: linear-gradient(to bottom, rgba(26,24,21,0.95), rgba(26,24,21,0));
+  background: linear-gradient(to bottom, rgba(11,15,22,0.95), rgba(11,15,22,0));
   pointer-events: none;
 }
 .topbar > * { pointer-events: auto; }
 
+/* brand fixed on the left, player centered independent of brand/menu width,
+   menu toggle pinned to the right */
+.brand { flex: 1 1 0; }
+.player { flex: 0 0 auto; margin: 0 auto; }
+.menu-toggle { flex: 1 1 0; margin-left: auto; }
+
 .menu-toggle {
   width: 42px; height: 42px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-  background: rgba(36,33,30,0.8);
+  background: rgba(18,26,38,0.75);
   border: 1px solid var(--line);
   border-radius: 50%; /* Circular, like a wax seal or button */
   transition: all 0.3s ease;
@@ -96,15 +112,31 @@ button { font-family: inherit; cursor: pointer; }
 .menu-toggle[aria-expanded="true"] span:nth-child(3){ transform:translateY(-7.5px) rotate(-45deg); }
 
 .brand {
-  display: flex; align-items: baseline; gap: 8px;
-  font-family: var(--disp); font-weight: 700;
-  letter-spacing: .05em; font-size: 18px;
+  display: flex; align-items: baseline; gap: 9px;
+  font-family: var(--disp); font-weight: 600;
+  letter-spacing: .06em; font-size: 21px;
   color: var(--ink-0);
   margin-right: auto;
   font-style: italic;
+  text-shadow: 0 0 18px rgba(157,140,255,0.35);
 }
-.brand-glyph { color: var(--terra); font-style: normal; }
-.brand-cursor { display: none; } /* Remove terminal cursor */
+.brand-glyph {
+  color: var(--terra); font-style: normal;
+  animation: glyph-breathe 5s ease-in-out infinite;
+}
+@keyframes glyph-breathe {
+  0%, 100% { opacity: .75; filter: drop-shadow(0 0 3px rgba(255,111,156,0.3)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 9px rgba(255,111,156,0.65)); }
+}
+.brand-cursor { display: none; }
+.brand-flag {
+  width: 22px; height: 14px;
+  object-fit: cover;
+  border: 1px solid rgba(242,238,252,0.25);
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(157,140,255,0.35);
+}
 
 /* Audio Player - Museum Guide / Hi-Fi aesthetic */
 /* -------------------- player -------------------- */
@@ -112,13 +144,13 @@ button { font-family: inherit; cursor: pointer; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background: rgba(36, 33, 30, 0.9);
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  background: rgba(18, 26, 38, 0.72);
+  border: 1px solid rgba(157,140,255,0.18);
+  border-radius: 20px;
   padding: 10px 16px;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(14px) saturate(140%);
   max-width: min(65vw, 440px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 26px rgba(0, 0, 0, 0.45), inset 0 0 20px rgba(157,140,255,0.05);
 }
 
 .player-row {
@@ -151,7 +183,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 .player-btn:hover {
-  background: rgba(212, 163, 115, 0.1);
+  background: rgba(157, 140, 255, 0.12);
   border-color: var(--ochre);
   color: var(--ochre);
 }
@@ -164,9 +196,9 @@ button { font-family: inherit; cursor: pointer; }
 #playBtn {
   border-color: var(--ochre);
   color: var(--ochre);
-  background: rgba(212, 163, 115, 0.08);
+  background: rgba(157, 140, 255, 0.10);
 }
-#playBtn:hover { background: rgba(212, 163, 115, 0.18); }
+#playBtn:hover { background: rgba(157, 140, 255, 0.20); }
 
 #shuffleBtn.is-active {
   color: var(--terra);
@@ -204,7 +236,7 @@ button { font-family: inherit; cursor: pointer; }
 .player-bar-buffered {
   height: 100%;
   width: 0%;
-  background: rgba(244, 235, 208, 0.15);
+  background: rgba(242, 238, 252, 0.15);
   position: absolute;
   left: 0;
   top: 0;
@@ -265,7 +297,7 @@ button { font-family: inherit; cursor: pointer; }
 .player-mode.is-radio {
   border-color: var(--rose);
   color: var(--rose);
-  background: rgba(181, 101, 118, 0.1);
+  background: rgba(255, 143, 177, 0.12);
 }
 
 .player-source {
@@ -290,7 +322,7 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 768px) {
   .topbar {
     padding: 0;
-    background: rgba(26, 24, 21, 0.97);
+    background: rgba(11, 15, 22, 0.97);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
   }
@@ -300,7 +332,7 @@ button { font-family: inherit; cursor: pointer; }
   .menu-toggle {
     position: absolute;
     top: 10px;
-    left: 10px;
+    right: 10px;
     z-index: 2;
     width: 36px;
     height: 36px;
@@ -312,7 +344,7 @@ button { font-family: inherit; cursor: pointer; }
     border-radius: 0;
     border: none;
     box-shadow: none;
-    padding: 10px 14px 10px 56px;
+    padding: 10px 56px 10px 14px;
   }
 
   .player-row {
@@ -350,19 +382,22 @@ button { font-family: inherit; cursor: pointer; }
   }
 }
 
-/* Nav Panel - Sketchbook / Ledger */
+/* Nav Panel - Sketchbook / Ledger
+   Opens from the right. Kept deliberately cheap to render:
+   no backdrop-filter, no animated box-shadow, GPU-friendly
+   transform-only transition, will-change hints while open. */
 .nav-panel {
-  position: fixed; top: 0; left: 0; bottom: 0; z-index: 300;
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 300;
   width: min(80vw, 320px);
   background: var(--bg-1);
-  border-right: 1px solid var(--line);
-  transform: translateX(-100%);
-  transition: transform .4s cubic-bezier(.7,0,.2,1);
+  border-left: 1px solid var(--line);
+  transform: translateX(100%);
+  transition: transform .28s ease-out;
   display: flex; flex-direction: column;
   padding: 80px 0 20px;
-  box-shadow: 10px 0 30px rgba(0,0,0,0.3);
+  contain: layout paint style;
 }
-.nav-panel.open { transform: translateX(0); }
+.nav-panel.open { transform: translateX(0); will-change: transform; }
 .nav-panel-head {
   padding: 0 24px 16px; font-family: var(--disp); font-size: 14px; letter-spacing: .1em;
   color: var(--ink-2); text-transform: uppercase;
@@ -370,18 +405,18 @@ button { font-family: inherit; cursor: pointer; }
   font-style: italic;
 }
 .nav-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
-.nav-list li { border-bottom: 1px solid rgba(66,60,55,0.3); }
+.nav-list li { border-bottom: 1px solid rgba(42,58,82,0.4); }
 .nav-list button {
   width: 100%; text-align: left; background: none; border: none;
   color: var(--ink-0); font-family: var(--disp); font-size: 16px;
   letter-spacing: .02em; padding: 16px 24px; display: flex; align-items: center; gap: 12px;
-  transition: background .2s, color .2s, padding-left .2s;
+  transition: background .15s, color .15s;
 }
 .nav-list button::before {
-  content: "❧"; color: var(--ink-2); transition: color .2s; font-size: 14px;
+  content: "❧"; color: var(--ink-2); font-size: 14px;
 }
 .nav-list button:hover, .nav-list button:focus-visible {
-  background: rgba(212,163,115,0.08); color: var(--ochre); padding-left: 30px;
+  background: rgba(157,140,255,0.10); color: var(--ochre);
 }
 .nav-list button:hover::before { color: var(--terra); }
 .nav-panel-foot {
@@ -389,9 +424,10 @@ button { font-family: inherit; cursor: pointer; }
   font-family: var(--body);
 }
 .nav-scrim {
-  position: fixed; inset: 0; z-index: 290; background: rgba(0,0,0,0.4);
-  opacity: 0; pointer-events: none; transition: opacity .3s;
-  backdrop-filter: blur(2px);
+  position: fixed; inset: 0; z-index: 290; background: rgba(0,0,0,0.45);
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+  /* no backdrop-filter: blurring the whole viewport every frame is
+     the main cause of jank on phones during the slide-in */
 }
 .nav-scrim.show { opacity: 1; pointer-events: auto; }
 
@@ -414,8 +450,18 @@ button { font-family: inherit; cursor: pointer; }
   text-transform: none;
   font-style: italic;
 }
-.node circle { cursor: pointer; transition: all 0.3s ease; }
-.node:hover .node-label { fill: var(--ink-0); font-weight: bold; }
+.node circle {
+  cursor: pointer;
+  transition: all 0.35s ease;
+  animation: node-pulse 6s ease-in-out infinite;
+}
+.node:nth-of-type(2n) circle { animation-delay: -2s; }
+.node:nth-of-type(3n) circle { animation-delay: -4s; }
+@keyframes node-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+  50% { filter: drop-shadow(0 0 11px currentColor) drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+}
+.node:hover .node-label { fill: var(--ink-0); font-weight: 600; }
 
 /* Constellation Draw — colorful trail left behind as the player drags
    a line from node to node. Segments fade out slowly after a round. */
@@ -429,7 +475,7 @@ button { font-family: inherit; cursor: pointer; }
 
 /* Content Panel - Gallery Placard / Art Book */
 .content-scrim {
-  position: fixed; inset: 0; z-index: 400; background: rgba(10,8,6,0.6);
+  position: fixed; inset: 0; z-index: 400; background: rgba(6,8,14,0.65);
   backdrop-filter: blur(4px);
   opacity: 0; pointer-events: none; transition: opacity .3s;
 }
@@ -440,7 +486,7 @@ button { font-family: inherit; cursor: pointer; }
   width: min(720px, 92vw); max-height: 84vh;
   background: var(--bg-1);
   border: 1px solid var(--line);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,163,115,0.1);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(157,140,255,0.14);
   opacity: 0; pointer-events: none;
   transition: opacity .3s ease, transform .3s ease;
   overflow: hidden;
@@ -483,7 +529,7 @@ button { font-family: inherit; cursor: pointer; }
 .journal-log {
   position: fixed; right: 0; top: 0; bottom: 0; z-index: 100;
   width: 280px;
-  background: linear-gradient(to left, rgba(26,24,21,0.95), rgba(26,24,21,0.6) 85%, transparent);
+  background: linear-gradient(to left, rgba(11,15,22,0.95), rgba(11,15,22,0.6) 85%, transparent);
   padding: 80px 20px 20px 30px;
   display: flex; flex-direction: column;
   pointer-events: none;
@@ -559,10 +605,10 @@ The Oracle — a hidden terminal, opened from the corner prompt
   position: fixed; bottom: 14px; left: 20px; z-index: 270;
   width: min(420px, 92vw);
   max-height: 56vh;
-  background: #14120f;
+  background: #070a11;
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,163,115,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(157,140,255,0.10);
   display: flex; flex-direction: column;
   opacity: 0; transform: translateY(10px) scale(0.98);
   pointer-events: none;
@@ -638,7 +684,7 @@ Constellation Draw — game
   width: 54px;
   height: 54px;
   border-radius: 50%;
-  background: rgba(36,33,30,0.9);
+  background: rgba(18,26,38,0.78);
   border: 1px solid var(--line);
   color: var(--gold);
   font-size: 22px;
@@ -668,7 +714,7 @@ Constellation Draw — game
   margin-bottom: 22px; font-size: 15px;
 }
 .game-btn {
-  background: rgba(212,163,115,0.1);
+  background: rgba(157,140,255,0.14);
   border: 1px solid var(--ochre);
   color: var(--ochre);
   font-family: var(--disp);
@@ -687,7 +733,7 @@ Constellation Draw — game
   left: 50%;
   transform: translateX(-50%);
   z-index: 150;
-  background: rgba(36,33,30,0.9);
+  background: rgba(18,26,38,0.78);
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 10px 22px;

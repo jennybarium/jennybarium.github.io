@@ -4,11 +4,11 @@ script.js — graph, nav, content panel, journal log, player
 All content driven by topics.json / diary.json.
 ========================================================= */
 const CATEGORY_COLORS = {
-    creative: '#e07a5f', // Terracotta
-    systems:  '#81b29a', // Sage
-    science:  '#f2cc8f', // Pale Gold
-    personal: '#b56576', // Muted Rose
-    default:  '#d4a373'  // Ochre
+    creative: '#ff6f9c', // Coral bloom
+    systems:  '#6fe3c4', // Kelp / arctic teal
+    science:  '#ffd27a', // Geyser amber
+    personal: '#ff8fb1', // Soft coral
+    default:  '#9d8cff'  // Violet iris
 };
 
 const state = {
@@ -20,7 +20,7 @@ const state = {
 const graphState = { svg: null, nodeSel: null, nodes: [] };
 
 /* Constellation Draw — memory/drawing game state */
-const TRAIL_COLORS = ['#d4a373', '#b56576', '#81b29a', '#f2cc8f', '#e07a5f']; // ochre, rose, sage, gold, terra
+const TRAIL_COLORS = ['#9d8cff', '#ff8fb1', '#6fe3c4', '#ffd27a', '#ff6f9c']; // iris, coral, kelp, amber, bloom
 const gameState = {
     active: false,
     sequence: [],
@@ -39,15 +39,77 @@ const gameState = {
 const MIN_GAME_NODES = 4;
 
 /* ---------------------------------------------------------
+Telegram Mini App bridge — entirely optional
+Every call in here is guarded behind `tg &&`, so on a normal
+browser tab (where window.Telegram never exists) this whole
+block is a silent no-op and the site behaves exactly as before.
+--------------------------------------------------------- */
+function initTelegram(){
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if(!tg) return null;
+
+    try {
+        tg.ready();
+        tg.expand();                     // open at full height instead of the collapsed sheet
+        if(typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
+        if(typeof tg.setHeaderColor === 'function') tg.setHeaderColor('#0b0f16');
+        if(typeof tg.setBackgroundColor === 'function') tg.setBackgroundColor('#0b0f16');
+    } catch(err){
+        console.warn('Telegram WebApp init skipped:', err);
+        return null;
+    }
+    return tg;
+}
+
+/* Wires the Telegram BackButton to whichever overlay is open, and
+   falls back to hiding itself when nothing is. No-ops entirely
+   when initTelegram() returned null (i.e. not inside Telegram). */
+function wireTelegramBackButton(tg){
+    if(!tg || !tg.BackButton) return;
+
+    function anyOverlayOpen(){
+        return document.getElementById('navPanel')?.classList.contains('open')
+            || document.getElementById('contentPanel')?.classList.contains('show')
+            || document.getElementById('gameModal')?.classList.contains('show')
+            || document.getElementById('oraclePanel')?.classList.contains('show');
+    }
+
+    function syncBackButton(){
+        try {
+            if(anyOverlayOpen()) tg.BackButton.show();
+            else tg.BackButton.hide();
+        } catch(err){ /* ignore — cosmetic only */ }
+    }
+
+    tg.BackButton.onClick(() => {
+        if(document.getElementById('navPanel')?.classList.contains('open') && window._closeMenu) window._closeMenu();
+        else if(document.getElementById('gameModal')?.classList.contains('show')) closeGameModal();
+        else if(document.getElementById('contentPanel')?.classList.contains('show') && window._closeContentPanel) window._closeContentPanel();
+        else if(document.getElementById('oraclePanel')?.classList.contains('show') && window._closeOracle) window._closeOracle();
+        syncBackButton();
+    });
+
+    // Re-check whenever the DOM changes state on the panels we care about
+    const observer = new MutationObserver(syncBackButton);
+    ['navPanel','contentPanel','gameModal','oraclePanel'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+    syncBackButton();
+}
+
+/* ---------------------------------------------------------
 Boot
 --------------------------------------------------------- */
 document.addEventListener('DOMContentLoaded', () => {
+    const tg = initTelegram();
     initMenu();
     initContentPanel();
     initGame();
     initOracle();
     initPlayer();
     loadData();
+    wireTelegramBackButton(tg);
 });
 
 async function loadData(){
@@ -217,10 +279,10 @@ function renderGraph(){
 
     nodeSel.append('circle')
         .attr('r', 14)
-        .attr('fill', 'rgba(46,42,38,0.85)')
+        .attr('fill', 'rgba(18,26,38,0.82)')
         .attr('stroke', d => CATEGORY_COLORS[d.category] || CATEGORY_COLORS.default)
-        .attr('stroke-width', 1.2)
-        .style('filter', 'drop-shadow(0 4px 6px rgba(0,0,0,0.4))'); // Soft shadow instead of neon glow
+        .attr('stroke-width', 1.3)
+        .style('color', d => CATEGORY_COLORS[d.category] || CATEGORY_COLORS.default); // drives currentColor glow in CSS
 
     nodeSel.append('text')
         .attr('class', 'node-label')
@@ -857,6 +919,7 @@ function initOracle(){
         panel.setAttribute('aria-hidden', 'true');
         trigger.setAttribute('aria-expanded', 'false');
     }
+    window._closeOracle = closeOracle;
 
     trigger.addEventListener('click', () => {
         panel.classList.contains('show') ? closeOracle() : openOracle();

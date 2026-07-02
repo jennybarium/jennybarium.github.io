@@ -3,24 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>:: ATELIER // creative index</title>
-<meta name="description" content="An artistic portfolio and creative diary, mapped as a live constellation.">
+<title>:: Bariumana // dreamscape index</title>
+<meta name="description" content="An artistic portfolio and creative diary, adrift in a bioluminescent constellation.">
+<link rel="icon" type="image/svg+xml" href="flag.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<!--
+  Telegram Mini App support.
+  This script is served only from Telegram's own CDN and is loaded
+  unconditionally per Telegram's integration guidelines, but every call
+  into it below is guarded — if the page is opened in a normal browser
+  window.Telegram will simply be undefined and all of it is skipped,
+  so the site behaves exactly as it does today outside Telegram.
+-->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
 <!-- top bar -->
 <header class="topbar">
-  <button id="menuToggle" class="menu-toggle" aria-label="Open navigation" aria-expanded="false" aria-controls="navPanel">
-    <span></span><span></span><span></span>
-  </button>
-
   <div class="brand">
     <span class="brand-glyph">❧</span>
-    <span class="brand-text">ATELIER</span>
+    <span class="brand-text">Bariumana</span>
+    <img src="flag.svg" alt="Flag" class="brand-flag" width="20" height="13">
   </div>
 
   <div class="player" id="player" aria-label="Audio player">
@@ -48,6 +55,10 @@
     </div>
     <audio id="audio" preload="auto"></audio>
   </div>
+
+  <button id="menuToggle" class="menu-toggle" aria-label="Open navigation" aria-expanded="false" aria-controls="navPanel">
+    <span></span><span></span><span></span>
+  </button>
 </header>
 
 <!-- hidden slide-out nav -->
