@@ -100,6 +100,112 @@ body::after {
   100% { transform: translate(-2%, 2%) scale(1.04); }
 }
 
+/* ---------------------------------------------------------
+Aurora Borealis Scene — stars, hill silhouette, moon, drifting
+northern lights. Fixed full-viewport, sits behind all content.
+--------------------------------------------------------- */
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.scene .star {
+  --hue: 250;
+  border-radius: 50%;
+  background: hsl(var(--hue), 90%, 85%);
+  box-shadow: 0 0 5px 1px hsl(var(--hue), 100%, 85%);
+  height: calc(var(--size, 2) * 1px);
+  width: calc(var(--size, 2) * 1px);
+  position: absolute;
+  left: calc(var(--x, 0) * 1%);
+  top: calc(var(--y, 0) * 1%);
+  opacity: 0.6;
+  animation: aurora-flicker calc(var(--duration, 2) * 1s) calc(var(--delay, 4) * 1s) infinite steps(1);
+}
+
+.scene .hill {
+  background: var(--bg-0);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 22vmin;
+  width: 68vmin;
+  border-radius: 0 100% 0 0;
+  opacity: 0.9;
+}
+.scene .hill::after {
+  content: "";
+  position: absolute;
+  height: 13vmin;
+  width: 50vmax;
+  background: var(--bg-0);
+  left: 0;
+  bottom: 0;
+  border-radius: 0 100% 0 0;
+}
+
+.scene .moon {
+  height: 26vmin;
+  width: 26vmin;
+  position: absolute;
+  left: 8vmin;
+  top: 8vmin;
+  background: radial-gradient(circle at 35% 35%, #f2eefc, #b7b3d6 70%);
+  border-radius: 50%;
+  box-shadow: 0 0 60px 12px rgba(242,238,252,0.28);
+  filter: blur(2px);
+  opacity: 0.85;
+}
+
+.scene .lights {
+  width: 200vmax;
+  height: 100vmax;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-20%, -55%) rotate(30deg);
+  display: flex;
+  filter: blur(60px);
+}
+
+.scene .light {
+  flex: 1;
+  --color-one: hsla(var(--hue-1), 100%, 60%, var(--alpha-1));
+  --color-two: hsla(var(--hue-2), 100%, 60%, var(--alpha-2));
+  --color-three: hsla(var(--hue-3), 100%, 60%, var(--alpha-3));
+  --up: calc(var(--y, 10) * 2vmax);
+  --left: calc(var(--x, 2) * 2vmax);
+  background-image: linear-gradient(0deg,
+    transparent,
+    var(--color-one) 10%,
+    transparent,
+    var(--color-two) 40%,
+    transparent,
+    var(--color-three) 60%);
+  background-size: 100% 40vmax;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  transform: translate(var(--left), var(--up)) scale(1);
+  animation: aurora-shift calc(var(--duration, 8) * 1s) calc(var(--delay, 0) * -1s) infinite ease;
+}
+
+@keyframes aurora-shift {
+  50% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes aurora-flicker {
+  0%, 50%, 100% { transform: scale(1); }
+  25% { transform: scale(0); }
+}
+
+@media (max-width: 768px) {
+  .scene .moon { height: 20vmin; width: 20vmin; }
+  .scene .lights { filter: blur(40px); }
+}
+
 /* keep real content above the texture layers */
 .topbar, .nav-panel, .nav-scrim, main, .journal-log,
 .oracle-wrap, .oracle-panel, .game-fab, .game-modal,
@@ -136,10 +242,16 @@ button { font-family: inherit; cursor: pointer; }
 }
 .topbar > * { pointer-events: auto; }
 
-/* brand fixed on the left, player centered independent of brand/menu width,
+/* brand fixed on the left, player truly centered in the viewport
+   (absolute + translate so it's independent of brand/menu widths),
    menu toggle pinned to the right */
-.brand { flex: 1 1 0; }
-.player { flex: 0 0 auto; margin: 0 auto; }
+.brand { flex: 0 0 auto; }
+.player {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+}
 .menu-toggle { flex: 0 0 auto; margin-left: auto; }
 
 .menu-toggle {
@@ -160,7 +272,7 @@ button { font-family: inherit; cursor: pointer; }
 .menu-toggle[aria-expanded="true"] span:nth-child(3){ transform:translateY(-7.5px) rotate(-45deg); }
 
 .brand {
-  display: flex; align-items: baseline; gap: 9px;
+  display: flex; align-items: center; gap: 9px;
   font-family: var(--disp); font-weight: 600;
   letter-spacing: .06em; font-size: 21px;
   color: var(--ink-0);
@@ -320,32 +432,54 @@ button { font-family: inherit; cursor: pointer; }
   flex-shrink: 0;
 }
 
-.player-mode {
-  font-size: 12px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+.player-mode-switch {
+  position: relative;
+  width: 56px;
+  height: 26px;
+  flex: none;
+  border-radius: 14px;
   border: 1px solid var(--line);
-  color: var(--ink-1);
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s;
+  background: rgba(11,15,22,0.5);
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex: none;
+  justify-content: space-between;
+  padding: 0 5px;
+  transition: border-color 0.25s ease, background 0.25s ease;
 }
 
-.player-mode:hover {
-  border-color: var(--ochre);
-  color: var(--ochre);
+.player-mode-switch:hover { border-color: var(--ochre); }
+
+.player-mode-switch .mode-icon {
+  font-size: 10px;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.55;
+  transition: opacity 0.25s ease, filter 0.25s ease;
 }
 
-.player-mode.is-radio {
-  border-color: var(--rose);
-  color: var(--rose);
-  background: rgba(255, 143, 177, 0.12);
+.player-mode-switch .mode-icon--music { opacity: 0.95; filter: none; }
+
+.player-mode-switch.is-radio .mode-icon--music { opacity: 0.55; filter: grayscale(1) brightness(1.6); }
+.player-mode-switch.is-radio .mode-icon--radio { opacity: 0.95; filter: none; }
+
+.player-mode-switch .mode-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ochre);
+  box-shadow: 0 0 8px rgba(157,140,255,0.55);
+  transition: transform 0.28s cubic-bezier(.4,1.4,.6,1), background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.player-mode-switch.is-radio .mode-knob {
+  transform: translateX(30px);
+  background: var(--rose);
+  box-shadow: 0 0 8px rgba(255,143,177,0.55);
 }
 
 .player-source {
@@ -387,6 +521,8 @@ button { font-family: inherit; cursor: pointer; }
   }
 
   .player {
+    position: static;
+    transform: none;
     width: 100%;
     max-width: 100%;
     border-radius: 0;
@@ -415,11 +551,18 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 @media (max-width: 420px) {
-  .player-btn, .player-mode {
+  .player-btn {
     width: 28px;
     height: 28px;
     font-size: 10px;
   }
+
+  .player-mode-switch {
+    width: 48px;
+    height: 24px;
+  }
+  .player-mode-switch .mode-knob { width: 18px; height: 18px; }
+  .player-mode-switch.is-radio .mode-knob { transform: translateX(24px); }
 
   .player-title {
     font-size: 10px;

@@ -103,6 +103,7 @@ Boot
 --------------------------------------------------------- */
 document.addEventListener('DOMContentLoaded', () => {
     const tg = initTelegram();
+    initAuroraScene();
     initMenu();
     initContentPanel();
     initGame();
@@ -111,6 +112,74 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
     wireTelegramBackButton(tg);
 });
+
+/* ---------------------------------------------------------
+Aurora Borealis background scene
+Generates flickering stars and drifting northern-lights bands
+with randomized hues so the palette differs slightly per visit.
+--------------------------------------------------------- */
+function initAuroraScene(){
+    const scene = document.getElementById('auroraScene');
+    if (!scene) return;
+
+    const randomInRange = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    const STAR_COUNT = 40;
+    const LIGHT_COUNT = 24;
+
+    // three hues drawn from the site's iris/coral/kelp/amber family so the
+    // aurora always harmonizes with the rest of the palette
+    const HUE_POOL = [255, 330, 165, 40];
+    const HUES = [
+        HUE_POOL[randomInRange(0, HUE_POOL.length - 1)],
+        HUE_POOL[randomInRange(0, HUE_POOL.length - 1)],
+        HUE_POOL[randomInRange(0, HUE_POOL.length - 1)]
+    ];
+    const ALPHAS = [0.35 + Math.random() * 0.25, 0.3 + Math.random() * 0.25, 0.3 + Math.random() * 0.25];
+
+    const frag = document.createDocumentFragment();
+
+    for (let s = 0; s < STAR_COUNT; s++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.setProperty('--size', (Math.random() * 2 + 0.5).toFixed(2));
+        star.style.setProperty('--x', (Math.random() * 100).toFixed(2));
+        star.style.setProperty('--y', (Math.random() * 60).toFixed(2));
+        star.style.setProperty('--duration', randomInRange(5, 10));
+        star.style.setProperty('--delay', randomInRange(0, 8));
+        frag.appendChild(star);
+    }
+
+    const hill = document.createElement('div');
+    hill.className = 'hill';
+    frag.appendChild(hill);
+
+    const moon = document.createElement('div');
+    moon.className = 'moon';
+    frag.appendChild(moon);
+
+    const lights = document.createElement('div');
+    lights.className = 'lights';
+    lights.style.setProperty('--hue-1', HUES[0]);
+    lights.style.setProperty('--hue-2', HUES[1]);
+    lights.style.setProperty('--hue-3', HUES[2]);
+    lights.style.setProperty('--alpha-1', ALPHAS[0].toFixed(2));
+    lights.style.setProperty('--alpha-2', ALPHAS[1].toFixed(2));
+    lights.style.setProperty('--alpha-3', ALPHAS[2].toFixed(2));
+
+    for (let l = 0; l < LIGHT_COUNT; l++) {
+        const light = document.createElement('div');
+        light.className = 'light';
+        light.style.setProperty('--duration', randomInRange(8, 18));
+        light.style.setProperty('--delay', randomInRange(0, 10));
+        light.style.setProperty('--x', randomInRange(0, 5));
+        light.style.setProperty('--y', randomInRange(0, 10));
+        lights.appendChild(light);
+    }
+    frag.appendChild(lights);
+
+    scene.appendChild(frag);
+}
 
 async function loadData(){
     try{
@@ -1066,8 +1135,8 @@ async function initPlayer() {
 
   function setMode(newMode, autoplay) {
     mode = newMode;
-    modeToggle.textContent = mode === 'radio' ? '📡' : '🎵';
     modeToggle.classList.toggle('is-radio', mode === 'radio');
+    modeToggle.setAttribute('aria-checked', mode === 'radio' ? 'true' : 'false');
     modeToggle.setAttribute('aria-label', mode === 'radio' ? 'Switch to music' : 'Switch to radio');
 
     [prevBtn, nextBtn, shuffleBtn].forEach(b => b.disabled = mode === 'radio');
