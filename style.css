@@ -110,15 +110,21 @@ button { font-family: inherit; cursor: pointer; }
 /* -------------------- player -------------------- */
 .player {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  gap: 6px;
   background: rgba(36, 33, 30, 0.9);
   border: 1px solid var(--line);
-  border-radius: 24px;
-  padding: 8px 18px 8px 10px;
+  border-radius: 18px;
+  padding: 10px 16px;
   backdrop-filter: blur(8px);
   max-width: min(65vw, 440px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .player-controls {
@@ -167,15 +173,9 @@ button { font-family: inherit; cursor: pointer; }
   border-color: var(--terra);
 }
 
-.player-meta {
+.player-title {
   min-width: 0;
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.player-title {
   font-size: 11px;
   letter-spacing: 0.03em;
   color: var(--ink-1);
@@ -313,23 +313,16 @@ button { font-family: inherit; cursor: pointer; }
     border: none;
     box-shadow: none;
     padding: 10px 14px 10px 56px;
+  }
+
+  .player-row {
     flex-wrap: wrap;
-    gap: 6px 10px;
   }
 
-  .player-controls {
-    order: 1;
-  }
-
-  .player-meta {
-    order: 2;
+  .player-title {
     flex-basis: 100%;
-    width: 100%;
-  }
-
-  .player-extras {
     order: 3;
-    margin-left: auto;
+    white-space: normal;
   }
 
   .player-source {
