@@ -4,11 +4,40 @@ script.js — graph, nav, content panel, journal log, player
 All content driven by topics.json / diary.json.
 ========================================================= */
 const CATEGORY_COLORS = {
+    career:   '#ffd27a', // Geyser amber — priority
+    identity: '#9d8cff', // Violet iris — priority
     creative: '#ff6f9c', // Coral bloom
     systems:  '#6fe3c4', // Kelp / arctic teal
-    science:  '#ffd27a', // Geyser amber
+    science:  '#ffb454', // Warm amber
     personal: '#ff8fb1', // Soft coral
     default:  '#9d8cff'  // Violet iris
+};
+
+/* Category importance — lower number = higher priority (bolder in graph,
+   sorted first in the nav menu). Unlisted categories fall back to 99. */
+const CATEGORY_PRIORITY = {
+    career:   0,
+    identity: 1,
+    creative: 2,
+    systems:  3,
+    science:  4,
+    personal: 5,
+};
+const PRIORITY_CATEGORIES = new Set(['career', 'identity']);
+function categoryPriority(cat){
+    return CATEGORY_PRIORITY.hasOwnProperty(cat) ? CATEGORY_PRIORITY[cat] : 99;
+}
+function isPriorityCategory(cat){
+    return PRIORITY_CATEGORIES.has(cat);
+}
+/* Human-readable labels for nav section headers */
+const CATEGORY_LABELS = {
+    career:   'Career',
+    identity: 'Identity',
+    creative: 'Creative',
+    systems:  'Systems',
+    science:  'Science',
+    personal: 'Personal',
 };
 
 const state = {
@@ -179,6 +208,29 @@ function initAuroraScene(){
     }
     frag.appendChild(lights);
 
+    // meteors — soft colorful streaks that pass through occasionally,
+    // reusing the same hue family as the aurora lights so they read as
+    // part of the same night sky rather than a separate effect
+    const meteorLayer = document.createElement('div');
+    meteorLayer.className = 'meteor-layer';
+    const METEOR_COUNT = 6;
+    for (let m = 0; m < METEOR_COUNT; m++) {
+        const meteor = document.createElement('div');
+        meteor.className = 'meteor';
+        const hue = HUE_POOL[randomInRange(0, HUE_POOL.length - 1)];
+        meteor.style.setProperty('--hue', hue);
+        meteor.style.setProperty('--x', randomInRange(0, 100));       // start x, %
+        meteor.style.setProperty('--y', randomInRange(-5, 40));       // start y, %
+        meteor.style.setProperty('--travel', randomInRange(28, 46));  // travel distance, vmax
+        meteor.style.setProperty('--angle', randomInRange(18, 34));   // fall angle, deg
+        meteor.style.setProperty('--length', (randomInRange(70, 130) / 10).toFixed(1)); // trail length em
+        meteor.style.setProperty('--meteor-duration', (randomInRange(14, 26) / 10).toFixed(1)); // seconds, streak itself
+        meteor.style.setProperty('--cycle', randomInRange(9, 22));    // seconds between appearances
+        meteor.style.setProperty('--delay', randomInRange(0, 20));    // stagger start
+        meteorLayer.appendChild(meteor);
+    }
+    frag.appendChild(meteorLayer);
+
     scene.appendChild(frag);
 }
 
@@ -327,16 +379,51 @@ function initMenu(){
 function renderNav(){
     const list = document.getElementById('navList');
     list.innerHTML = '';
-    visibleTopics().forEach(topic => {
-        const li = document.createElement('li');
-        const btn = document.createElement('button');
-        btn.textContent = topic.name;
-        btn.addEventListener('click', () => {
-            window._closeMenu();
-            openContentPanel(topic);
+
+    const topics = visibleTopics();
+
+    // group topics by category
+    const groups = new Map();
+    topics.forEach(topic => {
+        const cat = topic.category || 'default';
+        if(!groups.has(cat)) groups.set(cat, []);
+        groups.get(cat).push(topic);
+    });
+
+    // sort categories by importance (career/identity first), then alphabetically
+    const sortedCats = [...groups.keys()].sort((a, b) => {
+        const pa = categoryPriority(a), pb = categoryPriority(b);
+        if(pa !== pb) return pa - pb;
+        return a.localeCompare(b);
+    });
+
+    sortedCats.forEach(cat => {
+        const groupLi = document.createElement('li');
+        groupLi.className = 'nav-group' + (isPriorityCategory(cat) ? ' nav-group--priority' : '');
+
+        const heading = document.createElement('div');
+        heading.className = 'nav-group-heading';
+        heading.textContent = CATEGORY_LABELS[cat] || cat;
+        heading.style.color = CATEGORY_COLORS[cat] || CATEGORY_COLORS.default;
+        groupLi.appendChild(heading);
+
+        const subList = document.createElement('ul');
+        subList.className = 'nav-group-list';
+
+        groups.get(cat).forEach(topic => {
+            const li = document.createElement('li');
+            const btn = document.createElement('button');
+            btn.textContent = topic.name;
+            btn.addEventListener('click', () => {
+                window._closeMenu();
+                openContentPanel(topic);
+            });
+            li.appendChild(btn);
+            subList.appendChild(li);
         });
-        li.appendChild(btn);
-        list.appendChild(li);
+
+        groupLi.appendChild(subList);
+        list.appendChild(groupLi);
     });
 }
 
@@ -442,7 +529,14 @@ function renderGraph(){
     const zoomLayer = svg.append('g').attr('class', 'zoom-layer');
 
     // topic nodes float freely — no central hub, no connecting links
-    const nodes = topics.map(t => ({ ...t, id: t.slug }));
+    // priority categories (career/identity) are drawn last so they sit
+    // visually on top of the constellation
+    const sortedTopics = [...topics].sort((a, b) => {
+        const pa = isPriorityCategory(a.category) ? 0 : 1;
+        const pb = isPriorityCategory(b.category) ? 0 : 1;
+        return pa - pb; // non-priority first, priority last (drawn on top)
+    });
+    const nodes = sortedTopics.map(t => ({ ...t, id: t.slug }));
 
     // layer for the game's colorful drawn trail (sits above links, below nodes)
     const gameLayer = zoomLayer.append('g').attr('class', 'game-trail-layer');
@@ -458,17 +552,20 @@ function renderGraph(){
         .attr('aria-label', d => `Open ${d.name}`)
         .call(drag(simulationRef));
 
+    nodeSel
+        .classed('node--priority', d => isPriorityCategory(d.category));
+
     nodeSel.append('circle')
-        .attr('r', 14)
+        .attr('r', d => isPriorityCategory(d.category) ? 18 : 14)
         .attr('fill', 'rgba(18,26,38,0.82)')
         .attr('stroke', d => CATEGORY_COLORS[d.category] || CATEGORY_COLORS.default)
-        .attr('stroke-width', 1.3)
+        .attr('stroke-width', d => isPriorityCategory(d.category) ? 2.2 : 1.3)
         .style('color', d => CATEGORY_COLORS[d.category] || CATEGORY_COLORS.default); // drives currentColor glow in CSS
 
     nodeSel.append('text')
-        .attr('class', 'node-label')
+        .attr('class', d => `node-label${isPriorityCategory(d.category) ? ' node-label--priority' : ''}`)
         .attr('text-anchor', 'middle')
-        .attr('dy', 28)
+        .attr('dy', d => isPriorityCategory(d.category) ? 32 : 28)
         .text(d => d.name);
 
     nodeSel
@@ -483,11 +580,13 @@ function renderGraph(){
                 openContentPanel(d);
             }
         })
-        .on('mouseenter', function(){
-            d3.select(this).select('circle').transition().duration(200).attr('r', 17);
+        .on('mouseenter', function(event, d){
+            const r = isPriorityCategory(d.category) ? 21 : 17;
+            d3.select(this).select('circle').transition().duration(200).attr('r', r);
         })
-        .on('mouseleave', function(){
-            d3.select(this).select('circle').transition().duration(200).attr('r', 14);
+        .on('mouseleave', function(event, d){
+            const r = isPriorityCategory(d.category) ? 18 : 14;
+            d3.select(this).select('circle').transition().duration(200).attr('r', r);
         });
 
     graphState.svg = svg;
@@ -501,7 +600,7 @@ function renderGraph(){
         .force('charge', d3.forceManyBody().strength(-280))
         .force('x', d3.forceX(width / 2).strength(strengths.x))
         .force('y', d3.forceY(height / 2).strength(strengths.y))
-        .force('collision', d3.forceCollide().radius(36))
+        .force('collision', d3.forceCollide().radius(d => isPriorityCategory(d.category) ? 42 : 36))
         .alphaDecay(0.02)
         .on('tick', ticked);
 

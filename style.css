@@ -201,9 +201,54 @@ northern lights. Fixed full-viewport, sits behind all content.
   25% { transform: scale(0); }
 }
 
+/* meteors — occasional colorful streaks crossing the night sky */
+.scene .meteor-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.scene .meteor {
+  position: absolute;
+  left: calc(var(--x, 50) * 1%);
+  top: calc(var(--y, 0) * 1%);
+  width: calc(var(--length, 9) * 1em);
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    hsla(var(--hue), 95%, 78%, 0) 0%,
+    hsla(var(--hue), 95%, 78%, 0.85) 55%,
+    hsl(var(--hue), 100%, 92%) 100%
+  );
+  box-shadow: 0 0 6px 1px hsla(var(--hue), 100%, 80%, 0.55);
+  transform-origin: right center;
+  transform: rotate(var(--angle, 25deg));
+  opacity: 0;
+  animation: meteor-cycle calc(var(--cycle, 14) * 1s) calc(var(--delay, 0) * 1s) infinite ease-in;
+}
+
+@keyframes meteor-cycle {
+  0%, 82% { opacity: 0; transform: rotate(var(--angle, 25deg)) translateX(0); }
+  84% { opacity: 1; }
+  92% {
+    opacity: 0.9;
+    transform: rotate(var(--angle, 25deg)) translateX(calc(var(--travel, 36) * -1vmax));
+  }
+  97% { opacity: 0; }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle, 25deg)) translateX(calc(var(--travel, 36) * -1vmax));
+  }
+}
+
 @media (max-width: 768px) {
   .scene .moon { height: 20vmin; width: 20vmin; }
   .scene .lights { filter: blur(40px); }
+  .scene .meteor { width: calc(var(--length, 9) * 0.75em); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene .meteor { animation: none; opacity: 0; }
 }
 
 /* keep real content above the texture layers */
@@ -596,11 +641,43 @@ button { font-family: inherit; cursor: pointer; }
   font-style: italic;
 }
 .nav-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
-.nav-list li { border-bottom: 1px solid rgba(42,58,82,0.4); }
+
+/* category groups within the nav */
+.nav-group {
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(42,58,82,0.5);
+}
+.nav-group:last-child { border-bottom: none; margin-bottom: 0; }
+.nav-group-heading {
+  padding: 4px 24px 10px;
+  font-family: var(--disp);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  font-style: italic;
+  opacity: 0.85;
+}
+.nav-group--priority {
+  background: rgba(157,140,255,0.05);
+  border-bottom: 1px solid rgba(157,140,255,0.3);
+}
+.nav-group--priority .nav-group-heading {
+  font-weight: 700;
+  opacity: 1;
+  font-size: 12px;
+}
+.nav-group--priority .nav-group-list button {
+  font-weight: 600;
+}
+
+.nav-group-list { list-style: none; margin: 0; padding: 0; }
+.nav-group-list li { border-bottom: 1px solid rgba(42,58,82,0.25); }
+.nav-group-list li:last-child { border-bottom: none; }
 .nav-list button {
   width: 100%; text-align: left; background: none; border: none;
   color: var(--ink-0); font-family: var(--disp); font-size: 16px;
-  letter-spacing: .02em; padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  letter-spacing: .02em; padding: 14px 24px; display: flex; align-items: center; gap: 12px;
   transition: background .15s, color .15s;
 }
 .nav-list button::before {
@@ -653,6 +730,24 @@ button { font-family: inherit; cursor: pointer; }
   50% { filter: drop-shadow(0 0 11px currentColor) drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
 }
 .node:hover .node-label { fill: var(--ink-0); font-weight: 600; }
+
+/* Priority categories — career & identity — rendered bolder and brighter
+   so they stand out as the most important nodes in the constellation */
+.node--priority circle {
+  animation: node-pulse-priority 5s ease-in-out infinite;
+}
+@keyframes node-pulse-priority {
+  0%, 100% { filter: drop-shadow(0 0 7px currentColor) drop-shadow(0 4px 8px rgba(0,0,0,0.45)); }
+  50% { filter: drop-shadow(0 0 16px currentColor) drop-shadow(0 4px 8px rgba(0,0,0,0.45)); }
+}
+.node-label--priority {
+  font-size: 13.5px;
+  font-weight: 700;
+  font-style: normal;
+  fill: var(--ink-0);
+  letter-spacing: .04em;
+}
+.node--priority:hover .node-label--priority { fill: var(--ink-0); }
 
 /* Constellation Draw — colorful trail left behind as the player drags
    a line from node to node. Segments fade out slowly after a round. */
@@ -722,7 +817,17 @@ button { font-family: inherit; cursor: pointer; }
 }
 .content-body .media-figure img,
 .content-body .media-figure video {
-  display: block; width: 100%; height: auto;
+  display: block;
+  width: 100%;
+  height: auto;
+  /* keeps any single image from towering over the page or shrinking to
+     a sliver — the frame stays a sane, consistent size across displays
+     while the image itself is never cropped or distorted */
+  max-height: min(62vh, 620px);
+  min-height: 160px;
+  object-fit: contain;
+  object-position: center;
+  background: var(--bg-2);
   border-radius: 6px; border: 1px solid var(--line);
 }
 .content-body .media-figure audio {
@@ -730,6 +835,14 @@ button { font-family: inherit; cursor: pointer; }
 }
 .content-body .media-figure figcaption {
   margin-top: 8px; font-size: 13px; color: var(--ink-2); font-style: italic;
+}
+
+@media (max-width: 640px) {
+  .content-body .media-figure img,
+  .content-body .media-figure video {
+    max-height: 50vh;
+    min-height: 120px;
+  }
 }
 
 /* Journal - Sketchbook Ledger */
@@ -907,6 +1020,11 @@ Constellation Draw — game
   background: var(--bg-2);
   transform: translateY(-2px) scale(1.06);
 }
+.game-fab-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--gold);
+}
 
 .game-modal.content-panel { width: min(480px, 92vw); }
 
@@ -958,6 +1076,7 @@ Constellation Draw — game
 
 @media (max-width: 768px) {
   .game-fab { right: 14px; bottom: 14px; width: 46px; height: 46px; font-size: 18px; }
+  .game-fab-icon { width: 20px; height: 20px; }
   .game-hud { top: 78px; padding: 8px 16px; }
   .game-hud-row { font-size: 12px; gap: 16px; }
 }
