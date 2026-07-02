@@ -332,7 +332,7 @@ async function initPlayer() {
 
   audio.volume = parseFloat(volume.value);
   let library = { music: [], radio: [] };
-  let mode = 'music'; // 'music' or 'radio'
+  let mode = 'music';
   let index = 0;
   let shuffle = false;
 
@@ -351,7 +351,7 @@ async function initPlayer() {
     if (!isFinite(sec)) return '0:00';
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
+    return m + ':' + s;
   }
 
   function renderSourceSelect() {
@@ -369,13 +369,13 @@ async function initPlayer() {
     modeToggle.textContent = mode === 'radio' ? '📡' : '🎵';
     modeToggle.classList.toggle('is-radio', mode === 'radio');
     modeToggle.setAttribute('aria-label', mode === 'radio' ? 'Switch to music' : 'Switch to radio');
-    
+
     [prevBtn, nextBtn, shuffleBtn].forEach(b => b.disabled = mode === 'radio');
     renderSourceSelect();
     audio.pause();
     playBtn.textContent = '▶';
     playBtn.setAttribute('aria-label', 'Play');
-    
+
     if (currentList().length) loadTrack(0, autoplay);
     else title.textContent = mode === 'radio' ? 'no stations' : 'no tracks';
   }
@@ -383,22 +383,22 @@ async function initPlayer() {
   function loadTrack(i, autoplay) {
     const list = currentList();
     if (!list.length) return;
-    
+
     index = (i + list.length) % list.length;
     const item = list[index];
-    
+
     audio.src = item.src;
     title.textContent = item.title || 'Unknown Track';
     sourceSelect.value = index;
-    
+
     progress.style.width = '0%';
     buffered.style.width = '0%';
     title.classList.remove('is-buffering');
-    
+
     timeCurrent.textContent = '0:00';
     timeDuration.textContent = mode === 'radio' ? 'LIVE' : '0:00';
     progressBar.style.cursor = mode === 'radio' ? 'default' : 'pointer';
-    
+
     if (autoplay) {
       audio.play().catch((err) => {
         console.error('Playback error:', err);
@@ -454,7 +454,7 @@ async function initPlayer() {
 
   shuffleBtn.addEventListener('click', () => {
     shuffle = !shuffle;
-    shuffleBtn.style.color = shuffle ? 'var(--magenta)' : '';
+    shuffleBtn.style.color = shuffle ? 'var(--cyan)' : '';
   });
 
   sourceSelect.addEventListener('change', () => {
@@ -464,7 +464,7 @@ async function initPlayer() {
   audio.addEventListener('timeupdate', () => {
     if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
       const percent = (audio.currentTime / audio.duration) * 100;
-      progress.style.width = `${percent}%`;
+      progress.style.width = percent + '%';
       timeCurrent.textContent = formatTime(audio.currentTime);
       timeDuration.textContent = formatTime(audio.duration);
     }
@@ -474,7 +474,7 @@ async function initPlayer() {
     if (audio.duration && isFinite(audio.duration) && audio.buffered.length > 0) {
       const end = audio.buffered.end(audio.buffered.length - 1);
       const percent = (end / audio.duration) * 100;
-      buffered.style.width = `${percent}%`;
+      buffered.style.width = percent + '%';
     }
   });
 
