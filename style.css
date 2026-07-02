@@ -52,10 +52,58 @@ body {
   animation: aurora-drift 40s ease-in-out infinite alternate;
 }
 
+/* Dreamy textile texture — layered behind all content, like light
+   passing through woven, embroidered cloth. Kept as separate fixed
+   pseudo-elements so it never interferes with layout or interaction. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
+  background-image:
+    /* woven linen threads */
+    repeating-linear-gradient(90deg, rgba(242,238,252,0.05) 0px, rgba(242,238,252,0.05) 1px, transparent 1px, transparent 5px),
+    repeating-linear-gradient(0deg, rgba(242,238,252,0.04) 0px, rgba(242,238,252,0.04) 1px, transparent 1px, transparent 5px),
+    /* embroidered thread-like organic curves */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cg fill='none' stroke='%239d8cff' stroke-width='0.6' opacity='0.35'%3E%3Cpath d='M-20 60 Q100 10 220 70 T460 50'/%3E%3Cpath d='M-30 180 Q90 130 210 190 T450 170'/%3E%3Cpath d='M-10 300 Q130 250 250 310 T470 290'/%3E%3C/g%3E%3Cg fill='none' stroke='%23ff8fb1' stroke-width='0.5' opacity='0.3'%3E%3Cpath d='M-20 120 Q110 260 230 130 T440 220'/%3E%3Cpath d='M0 340 Q140 220 260 350 T480 260'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 6px 6px, 6px 6px, 480px 480px;
+  background-position: 0 0, 0 0, center;
+}
+
+/* soft painterly veils — like dye bleeding through fabric */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(ellipse 40% 30% at 25% 30%, rgba(157,140,255,0.07), transparent 70%),
+    radial-gradient(ellipse 35% 25% at 75% 65%, rgba(255,111,156,0.06), transparent 70%),
+    radial-gradient(ellipse 45% 35% at 60% 15%, rgba(111,227,196,0.05), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 30% 85%, rgba(255,210,122,0.04), transparent 70%);
+  background-attachment: fixed;
+  animation: veil-drift 70s ease-in-out infinite alternate;
+}
+
 @keyframes aurora-drift {
   0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
   100% { background-position: 4% 3%, 96% 4%, 54% 96%, 0 0; }
 }
+
+@keyframes veil-drift {
+  0%   { transform: translate(0%, 0%) scale(1); }
+  100% { transform: translate(-2%, 2%) scale(1.04); }
+}
+
+/* keep real content above the texture layers */
+.topbar, .nav-panel, .nav-scrim, main, .journal-log,
+.oracle-wrap, .oracle-panel, .game-fab, .game-modal,
+.content-scrim, .game-hud { position: relative; z-index: 1; }
 
 ::selection { background: var(--rose); color: var(--bg-0); }
 a { color: var(--ochre); text-decoration: none; border-bottom: 1px dotted var(--ochre); transition: color 0.2s; }
@@ -92,7 +140,7 @@ button { font-family: inherit; cursor: pointer; }
    menu toggle pinned to the right */
 .brand { flex: 1 1 0; }
 .player { flex: 0 0 auto; margin: 0 auto; }
-.menu-toggle { flex: 1 1 0; margin-left: auto; }
+.menu-toggle { flex: 0 0 auto; margin-left: auto; }
 
 .menu-toggle {
   width: 42px; height: 42px;
@@ -130,10 +178,10 @@ button { font-family: inherit; cursor: pointer; }
 }
 .brand-cursor { display: none; }
 .brand-flag {
-  width: 22px; height: 14px;
+  width: 66px; height: 42px;
   object-fit: cover;
   border: 1px solid rgba(242,238,252,0.25);
-  border-radius: 3px;
+  border-radius: 5px;
   flex-shrink: 0;
   box-shadow: 0 0 10px rgba(157,140,255,0.35);
 }
