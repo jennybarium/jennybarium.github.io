@@ -323,21 +323,43 @@ async function initPlayer(){
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
   const shuffleBtn = document.getElementById('shuffleBtn');
+  const progressBar = document.getElementById('progressBar');
   const progress = document.getElementById('trackProgress');
+  const timeCurrent = document.getElementById('timeCurrent');
+  const timeDuration = document.getElementById('timeDuration');
   const volume = document.getElementById('volume');
   const title = document.getElementById('trackTitle');
+  const sourceSelect = document.getElementById('sourceSelect');
 
   audio.volume = parseFloat(volume.value);
 
-  let playlist = [];
+  let playlist = []; // flat list of { title, src, isRadio }
   let index = 0;
   let shuffle = false;
 
   try{
     const res = await fetch('assets/audio/playlist.json');
-    playlist = await res.json();
+    const data = await res.json();
+    const tracks = (data.tracks || []).map(t => ({ ...t, isRadio: false }));
+    const radio  = (data.radio  || []).map(t => ({ ...t, isRadio: true }));
+    playlist = [...tracks, ...radio];
+
+    sourceSelect.innerHTML = '';
+    playlist.forEach((item, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = item.isRadio ? `📡 ${item.title}` : item.title;
+      sourceSelect.appendChild(opt);
+    });
   } catch(err){
     console.error('Failed to load playlist.json', err);
+  }
+
+  function formatTime(sec){
+    if(!isFinite(sec)) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
   }
 
   function loadTrack(i, autoplay){
@@ -346,9 +368,16 @@ async function initPlayer(){
       return;
     }
     index = (i + playlist.length) % playlist.length;
-    audio.src = `assets/audio/${playlist[index]}`;
-    title.textContent = playlist[index];
+    const item = playlist[index];
+    audio.src = item.src;
+    title.textContent = item.title;
+    sourceSelect.value = index;
     progress.style.width = '0%';
+    timeCurrent.textContent = '0:00';
+    timeDuration.textContent = item.isRadio ? 'LIVE' : '0:00';
+    // radio streams have no meaningful prev/next/shuffle/seek
+    [prevBtn, nextBtn, shuffleBtn].forEach(b => b.disabled = item.isRadio);
+    progressBar.style.cursor = item.isRadio ? 'default' : 'pointer';
     if(autoplay){
       audio.play().catch(() => {});
       playBtn.textContent = '❚❚';
@@ -386,10 +415,24 @@ async function initPlayer(){
     shuffleBtn.style.color = shuffle ? 'var(--magenta)' : '';
   });
 
+  sourceSelect.addEventListener('change', () => {
+    loadTrack(parseInt(sourceSelect.value, 10), true);
+  });
+
   audio.addEventListener('timeupdate', () => {
-    if(audio.duration){
+    if(audio.duration && isFinite(audio.duration)){
       progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+      timeCurrent.textContent = formatTime(audio.currentTime);
+      timeDuration.textContent = formatTime(audio.duration);
     }
+  });
+
+  // click/tap the bar to seek (disabled for live radio, no fixed duration)
+  progressBar.addEventListener('click', (e) => {
+    if(!audio.duration || !isFinite(audio.duration)) return;
+    const rect = progressBar.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = ratio * audio.duration;
   });
 
   audio.addEventListener('ended', next);

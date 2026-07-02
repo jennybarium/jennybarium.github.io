@@ -1,1 +1,13 @@
 ["AURORA - You Can’t Run From Yourself - From Kaiju No. 8.mp3", "Arcane, Imagine Dragons, JID - Enemy with JID (Opening Title Version).mp3", "Alexia Evellyn - Stand In Your Power.mp3", "4 Non Blondes - What's Up.mp3"]
+{
+  "tracks": [
+    { "title": "AURORA - You Can’t Run From Yourself - From Kaiju No. 8.mp3", "src": "assets/audio/AURORA - You Can’t Run From Yourself - From Kaiju No. 8.mp3" },
+    { "title": "Arcane, Imagine Dragons, JID - Enemy with JID (Opening Title Version).mp3", "src": "assets/audio/Arcane, Imagine Dragons, JID - Enemy with JID (Opening Title Version).mp3" },
+    { "title": "4 Non Blondes - What's Up.mp3", "src": "assets/audio/4 Non Blondes - What's Up.mp3" }
+    { "title": "Alexia Evellyn - Stand In Your Power.mp3", "src": "assets/audio/Alexia Evellyn - Stand In Your Power.mp3" }
+  ],
+  "radio": [
+    { "title": "Metal Express Radio — Oslo", "src": "https://s39.myradiostream.com/:11590/;?" },
+    { "title": "KEXP — Seattle", "src": "https://kexp.streamguys1.com/kexp160.aac" }
+  ]
+}

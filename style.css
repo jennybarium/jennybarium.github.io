@@ -153,10 +153,24 @@ body::before{
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .player-bar{
-  height:2px; background:var(--line); margin-top:4px; border-radius:2px; overflow:hidden;
+  height:5px; background:var(--line); margin-top:4px; border-radius:2px; overflow:hidden;
+  cursor:pointer; position:relative;
 }
 .player-bar-fill{
   height:100%; width:0%; background:var(--cyan); box-shadow:0 0 6px var(--cyan);
+  pointer-events:none;
+}
+.player-times{
+  display:flex; justify-content:space-between;
+  font-size:8px; color:var(--ink-2); margin-top:2px; letter-spacing:.04em;
+}
+.player-source{
+  background:var(--bg-2); color:var(--ink-1); border:1px solid var(--line);
+  border-radius:4px; font-size:10px; padding:3px 4px; max-width:90px;
+  font-family:var(--body);
+}
+@media (max-width:640px){
+  .player-source{ display:none; }
 }
 .player-volume{
   width:50px; accent-color:var(--magenta);
