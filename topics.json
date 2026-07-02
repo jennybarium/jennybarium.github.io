@@ -1,0 +1,114 @@
+[
+  {
+    "name": "Music & Covers",
+    "slug": "music",
+    "show": true,
+    "category": "creative",
+    "content": "<p>Recordings, covers, and half-finished ideas. This is where the audio experiments live — raw takes, loop pedal sketches, and covers of songs I can't stop replaying.</p><ul><li>Latest cover: <em>placeholder — swap with your track title</em></li><li>Gear notes: interface, mic, and pedal chain</li><li>Embed a player here or link out to a hosted track</li></ul>"
+  },
+  {
+    "name": "Artistic Designs & Gallery",
+    "slug": "art",
+    "show": true,
+    "category": "creative",
+    "content": "<p>Visual ideas — posters, glyphs, generative sketches, and anything that started as a doodle in a margin.</p><div class=\"gallery-grid\"><div class=\"gallery-item\">img_001</div><div class=\"gallery-item\">img_002</div><div class=\"gallery-item\">img_003</div><div class=\"gallery-item\">img_004</div></div><p class=\"hint\">Replace the gallery-item divs with real &lt;img&gt; tags when you have assets.</p>"
+  },
+  {
+    "name": "Tech Stuff",
+    "slug": "tech",
+    "show": true,
+    "category": "systems",
+    "content": "<p>Notes on hardware, homelab, and whatever I'm tinkering with this week.</p><ul><li>Current stack: placeholder</li><li>Homelab status: placeholder</li><li>Latest build log entry: placeholder</li></ul>"
+  },
+  {
+    "name": "About My Identity",
+    "slug": "identity",
+    "show": true,
+    "category": "personal",
+    "content": "<p>Who's running this terminal. A short bio, what I care about, and how to reach me.</p><p class=\"hint\">Write your real bio here — this is the one section visitors read first.</p>"
+  },
+  {
+    "name": "Physics & Gallery",
+    "slug": "physics",
+    "show": true,
+    "category": "science",
+    "content": "<p>Concepts, sketches, and simulations from physics I find beautiful — orbital mechanics, wave interference, field diagrams.</p><div class=\"gallery-grid\"><div class=\"gallery-item\">fig_001</div><div class=\"gallery-item\">fig_002</div><div class=\"gallery-item\">fig_003</div></div>"
+  },
+  {
+    "name": "Satellite Data",
+    "slug": "satellites",
+    "show": true,
+    "category": "science",
+    "content": "<p>Playing with public satellite feeds — TLE tracking, imagery, orbital passes over my location.</p><ul><li>Favorite dataset: placeholder</li><li>Next experiment: placeholder</li></ul>"
+  },
+  {
+    "name": "Rocks & Crystals",
+    "slug": "rocks",
+    "show": true,
+    "category": "personal",
+    "content": "<p>A small physical collection, catalogued digitally. Specimen notes, origin, and why each one made the cut.</p><ul><li>Specimen 001 — placeholder</li><li>Specimen 002 — placeholder</li></ul>"
+  },
+  {
+    "name": "QA Engineering & Testing",
+    "slug": "qa",
+    "show": true,
+    "category": "systems",
+    "content": "<p>Notes on breaking things properly — test strategy, automation frameworks, and bug write-ups worth remembering.</p><ul><li>Current framework: placeholder</li><li>Favorite bug story: placeholder</li></ul>"
+  },
+  {
+    "name": "Chaos & Fractals",
+    "slug": "chaos",
+    "show": true,
+    "category": "science",
+    "content": "<p>Strange attractors, Mandelbrot dives, and other proof that simple rules make complicated worlds.</p><div class=\"gallery-grid\"><div class=\"gallery-item\">render_001</div><div class=\"gallery-item\">render_002</div></div>"
+  },
+  {
+    "name": "Neural Networks",
+    "slug": "neural-nets",
+    "show": true,
+    "category": "systems",
+    "content": "<p>Model architectures, training notes, and small experiments — from scratch implementations to fine-tuning logs.</p><ul><li>Current experiment: placeholder</li><li>Notebook link: placeholder</li></ul>"
+  },
+  {
+    "name": "Flag Gallery",
+    "slug": "flags",
+    "show": true,
+    "category": "creative",
+    "content": "<p>A collection of flags — historical, fictional, vexillology rabbit holes.</p><div class=\"gallery-grid\"><div class=\"gallery-item\">flag_001</div><div class=\"gallery-item\">flag_002</div><div class=\"gallery-item\">flag_003</div></div>"
+  },
+  {
+    "name": "Sözlerim",
+    "slug": "sozlerim",
+    "show": true,
+    "category": "personal",
+    "content": "<p>Words, lyrics, and lines that are mine — poetry fragments and things I wanted written down somewhere permanent.</p><p class=\"hint\">Replace with your own text/lyrics.</p>"
+  },
+  {
+    "name": "Daily Diary",
+    "slug": "diary",
+    "show": true,
+    "category": "personal",
+    "content": "<p>The running log. See the Journal Log panel for the latest entries, pulled live from <code>diary.json</code>.</p>"
+  },
+  {
+    "name": "Road Mapping",
+    "slug": "roadmap",
+    "show": true,
+    "category": "systems",
+    "content": "<p>Where this site and its adjacent projects are headed.</p><ul><li>Next: placeholder</li><li>Later: placeholder</li><li>Someday: placeholder</li></ul>"
+  },
+  {
+    "name": "Experimental / Unreleased",
+    "slug": "experimental",
+    "show": true,
+    "category": "systems",
+    "content": "<p>Unfinished, unstable, and unlabeled. Things that might become their own topic someday.</p><p class=\"hint\">Set <code>\"show\": false</code> on any entry here to keep it out of the graph until it's ready.</p>"
+  },
+  {
+    "name": "VPN Methods",
+    "slug": "vpn",
+    "show": true,
+    "category": "systems",
+    "content": "<p>Notes on tunneling, self-hosted VPN setups, and network privacy experiments.</p><ul><li>Current setup: placeholder</li><li>Protocol notes: placeholder</li></ul>"
+  }
+]

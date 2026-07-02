@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>:: NODE // personal index</title>
+<meta name="description" content="A personal diary and portfolio, mapped as a live network graph.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ambient scanline / noise overlay -->
+<div class="scanlines" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- top bar -->
+<header class="topbar">
+  <button id="menuToggle" class="menu-toggle" aria-label="Open navigation" aria-expanded="false" aria-controls="navPanel">
+    <span></span><span></span><span></span>
+  </button>
+
+  <div class="brand">
+    <span class="brand-glyph">◉</span>
+    <span class="brand-text">NODE<span class="brand-cursor">_</span></span>
+  </div>
+
+  <div class="player" id="player" aria-label="Audio player">
+    <button id="playBtn" class="player-btn" aria-label="Play">▶</button>
+    <div class="player-meta">
+      <div class="player-title" id="trackTitle">signal_00.mp3</div>
+      <div class="player-bar"><div class="player-bar-fill" id="trackProgress"></div></div>
+    </div>
+    <input id="volume" class="player-volume" type="range" min="0" max="1" step="0.01" value="0.6" aria-label="Volume">
+    <audio id="audio" preload="none">
+      <source src="assets/audio/track1.mp3" type="audio/mpeg">
+    </audio>
+  </div>
+</header>
+
+<!-- hidden slide-out nav -->
+<nav id="navPanel" class="nav-panel" aria-hidden="true">
+  <div class="nav-panel-head">
+    <span>// index</span>
+  </div>
+  <ul id="navList" class="nav-list"></ul>
+  <div class="nav-panel-foot">topics.json · live</div>
+</nav>
+<div id="navScrim" class="nav-scrim"></div>
+
+<!-- graph -->
+<main>
+  <section id="graphSection" class="graph-section" aria-label="Topic network graph">
+    <svg id="graph" role="img" aria-label="Interactive network of topics. Click a node to open it."></svg>
+    <div class="graph-hint">click / tap a node · drag to reposition · scroll to zoom</div>
+  </section>
+
+  <!-- content panel (modal) -->
+  <section id="contentPanel" class="content-panel" aria-hidden="true">
+    <div class="content-panel-inner">
+      <button id="closePanel" class="close-btn" aria-label="Close">✕</button>
+      <div class="content-eyebrow" id="contentCategory">category</div>
+      <h1 id="contentTitle">title</h1>
+      <div id="contentBody" class="content-body"></div>
+    </div>
+  </section>
+  <div id="contentScrim" class="content-scrim"></div>
+</main>
+
+<!-- diary / journal log stream -->
+<aside id="journalLog" class="journal-log" aria-label="Journal log">
+  <div class="journal-log-head">
+    <span class="journal-dot"></span> journal_log.stream
+  </div>
+  <ul id="journalList" class="journal-list"></ul>
+</aside>
+
+<footer class="sitefoot">
+  <span>root@node:~$</span>
+  <span class="sitefoot-blink">_</span>
+</footer>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

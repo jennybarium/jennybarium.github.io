@@ -1,0 +1,27 @@
+[
+  {
+    "date": "2026-06-30",
+    "title": "site v1 online",
+    "text": "First working build of the node graph deployed. Nodes still drift a little too fast on mobile — tune damping next."
+  },
+  {
+    "date": "2026-06-24",
+    "title": "satellite pass",
+    "text": "Caught a clean ISS pass at dusk. Logging TLE data for a future overlay experiment."
+  },
+  {
+    "date": "2026-06-18",
+    "title": "new specimen",
+    "text": "Picked up a small piece of labradorite. Cataloguing it under rocks once I get decent light for photos."
+  },
+  {
+    "date": "2026-06-10",
+    "title": "fractal render batch",
+    "text": "Ran an overnight batch of Julia set renders at higher iteration depth. A few worth keeping in the gallery."
+  },
+  {
+    "date": "2026-06-02",
+    "title": "test framework rewrite",
+    "text": "Migrating the QA suite to a leaner assertion layer. Fewer flaky tests already."
+  }
+]
