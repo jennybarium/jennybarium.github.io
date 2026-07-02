@@ -135,17 +135,18 @@ button { font-family: inherit; cursor: pointer; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-style: italic;
 }
-.player-bar {
-  height: 3px; background: var(--line); margin-top: 6px; border-radius: 2px; overflow: hidden;
-  cursor: pointer; position: relative;
+.player-bar{
+    height:4px; background:var(--line); margin-top:5px; border-radius:2px; overflow:hidden;
+    cursor:pointer; position:relative;
 }
-.player-bar-buffered {
-  height: 100%; width: 0%; background: rgba(244,235,208,0.15);
-  position: absolute; left: 0; top: 0; pointer-events: none; z-index: 1;
+.player-bar-buffered{
+    height:100%; width:0%; background:rgba(233,241,242,0.2);
+    position:absolute; left:0; top:0; pointer-events:none; z-index:1;
 }
 .player-bar-fill{
-    height:100%; width:0%; background:var(--cyan); box-shadow:0 0 6px var(--cyan);
+    height:100%; width:0%; background:var(--cyan); 
     pointer-events:none; position:absolute; left:0; top:0; z-index:2;
+    transition: width 0.1s linear;
 }
 .player-title.is-buffering::after {
   content: " · tuning..."; color: var(--ink-2); font-style: italic;
