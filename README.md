@@ -5,7 +5,7 @@ A single-page personal diary/portfolio: a live, force-directed node graph (D3 v7
 ## Files
 
 ```
-index.html      structure
+index.html      structure, fuck
 style.css       cyberpunk-terminal styling
 script.js       graph, nav, modal, diary stream, player
 topics.json     every topic node — edit this to change the site
