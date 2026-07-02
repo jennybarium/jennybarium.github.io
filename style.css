@@ -164,6 +164,12 @@ body::before{
   display:flex; justify-content:space-between;
   font-size:8px; color:var(--ink-2); margin-top:2px; letter-spacing:.04em;
 }
+.player-mode{
+  font-size:11px;
+}
+.player-mode.is-radio{
+  border-color:var(--magenta); color:var(--magenta);
+}
 .player-source{
   background:var(--bg-2); color:var(--ink-1); border:1px solid var(--line);
   border-radius:4px; font-size:10px; padding:3px 4px; max-width:90px;

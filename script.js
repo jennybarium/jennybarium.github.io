@@ -323,6 +323,7 @@ async function initPlayer(){
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
   const shuffleBtn = document.getElementById('shuffleBtn');
+  const modeToggle = document.getElementById('modeToggle');
   const progressBar = document.getElementById('progressBar');
   const progress = document.getElementById('trackProgress');
   const timeCurrent = document.getElementById('timeCurrent');
@@ -333,27 +334,21 @@ async function initPlayer(){
 
   audio.volume = parseFloat(volume.value);
 
-  let playlist = []; // flat list of { title, src, isRadio }
+  let library = { music: [], radio: [] };
+  let mode = 'music'; // 'music' or 'radio'
   let index = 0;
   let shuffle = false;
 
   try{
     const res = await fetch('assets/audio/playlist.json');
     const data = await res.json();
-    const tracks = (data.tracks || []).map(t => ({ ...t, isRadio: false }));
-    const radio  = (data.radio  || []).map(t => ({ ...t, isRadio: true }));
-    playlist = [...tracks, ...radio];
-
-    sourceSelect.innerHTML = '';
-    playlist.forEach((item, i) => {
-      const opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = item.isRadio ? `📡 ${item.title}` : item.title;
-      sourceSelect.appendChild(opt);
-    });
+    library.music = data.tracks || [];
+    library.radio = data.radio || [];
   } catch(err){
     console.error('Failed to load playlist.json', err);
   }
+
+  function currentList(){ return library[mode]; }
 
   function formatTime(sec){
     if(!isFinite(sec)) return '0:00';
@@ -362,43 +357,72 @@ async function initPlayer(){
     return `${m}:${s}`;
   }
 
+  function renderSourceSelect(){
+    sourceSelect.innerHTML = '';
+    currentList().forEach((item, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = item.title;
+      sourceSelect.appendChild(opt);
+    });
+  }
+
+  function setMode(newMode, autoplay){
+    mode = newMode;
+    modeToggle.textContent = mode === 'radio' ? '📡' : '🎵';
+    modeToggle.classList.toggle('is-radio', mode === 'radio');
+    modeToggle.setAttribute('aria-label', mode === 'radio' ? 'Switch to music' : 'Switch to radio');
+    [prevBtn, nextBtn, shuffleBtn].forEach(b => b.disabled = mode === 'radio');
+    renderSourceSelect();
+    audio.pause();
+    playBtn.textContent = '▶';
+    playBtn.setAttribute('aria-label', 'Play');
+    if(currentList().length) loadTrack(0, autoplay);
+    else title.textContent = mode === 'radio' ? 'no stations — edit playlist.json' : 'no tracks — edit playlist.json';
+  }
+
   function loadTrack(i, autoplay){
-    if(!playlist.length){
-      title.textContent = 'no tracks — edit assets/audio/playlist.json';
-      return;
-    }
-    index = (i + playlist.length) % playlist.length;
-    const item = playlist[index];
+    const list = currentList();
+    if(!list.length) return;
+    index = (i + list.length) % list.length;
+    const item = list[index];
     audio.src = item.src;
     title.textContent = item.title;
     sourceSelect.value = index;
     progress.style.width = '0%';
     timeCurrent.textContent = '0:00';
-    timeDuration.textContent = item.isRadio ? 'LIVE' : '0:00';
-    // radio streams have no meaningful prev/next/shuffle/seek
-    [prevBtn, nextBtn, shuffleBtn].forEach(b => b.disabled = item.isRadio);
-    progressBar.style.cursor = item.isRadio ? 'default' : 'pointer';
+    timeDuration.textContent = mode === 'radio' ? 'LIVE' : '0:00';
+    progressBar.style.cursor = mode === 'radio' ? 'default' : 'pointer';
     if(autoplay){
-      audio.play().catch(() => {});
+      audio.play().catch(() => {
+        title.textContent = `couldn't play — check the stream URL`;
+      });
       playBtn.textContent = '❚❚';
       playBtn.setAttribute('aria-label', 'Pause');
     }
   }
 
   function next(){
-    const i = shuffle ? Math.floor(Math.random() * playlist.length) : index + 1;
+    const list = currentList();
+    const i = shuffle ? Math.floor(Math.random() * list.length) : index + 1;
     loadTrack(i, !audio.paused);
   }
   function prev(){
     loadTrack(index - 1, !audio.paused);
   }
 
-  if(playlist.length) loadTrack(0, false);
+  setMode('music', false);
+
+  modeToggle.addEventListener('click', () => {
+    setMode(mode === 'music' ? 'radio' : 'music', true);
+  });
 
   playBtn.addEventListener('click', () => {
-    if(!playlist.length) return;
+    if(!currentList().length) return;
     if(audio.paused){
-      audio.play().catch(() => {});
+      audio.play().catch(() => {
+        title.textContent = `couldn't play — check the stream URL`;
+      });
       playBtn.textContent = '❚❚';
       playBtn.setAttribute('aria-label', 'Pause');
     } else {
@@ -427,9 +451,8 @@ async function initPlayer(){
     }
   });
 
-  // click/tap the bar to seek (disabled for live radio, no fixed duration)
   progressBar.addEventListener('click', (e) => {
-    if(!audio.duration || !isFinite(audio.duration)) return;
+    if(mode === 'radio' || !audio.duration || !isFinite(audio.duration)) return;
     const rect = progressBar.getBoundingClientRect();
     const ratio = (e.clientX - rect.left) / rect.width;
     audio.currentTime = ratio * audio.duration;
