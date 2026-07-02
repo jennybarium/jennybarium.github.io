@@ -11,7 +11,14 @@
     "slug": "art",
     "show": true,
     "category": "creative",
-    "content": "<p>Visual ideas — posters, glyphs, generative sketches, and anything that started as a doodle in a margin.</p><div class=\"gallery-grid\"><div class=\"gallery-item\">img_001</div><div class=\"gallery-item\">img_002</div><div class=\"gallery-item\">img_003</div><div class=\"gallery-item\">img_004</div></div><p class=\"hint\">Replace the gallery-item divs with real &lt;img&gt; tags when you have assets.</p>"
+    "content": [
+    { "type": "text", "html": "<p>This gallery had such cool feminine and abstract paintings and I really loved them!</p>"},
+    { "type": "image", "key": "artgallery-1", "caption": ""},
+    { "type": "image", "key": "artgallery-2", "caption": ""},
+    { "type": "image", "key": "artgallery-3", "caption": ""},
+    { "type": "image", "key": "artgallery-4", "caption": ""},
+    { "type": "image", "key": "artgallery-5", "caption": ""}
+    ]
   },
   {
     "name": "Tech Stuff",
@@ -46,7 +53,10 @@
     "slug": "rocks",
     "show": true,
     "category": "personal",
-    "content": "<p>A small physical collection, catalogued digitally. Specimen notes, origin, and why each one made the cut.</p><ul><li>Specimen 001 — placeholder</li><li>Specimen 002 — placeholder</li></ul>"
+    "content": [
+    { "type": "text", "html": "<p>This rock comes from Golestan Province, Iran. it has elements such as lead and iron. other specifics are unknown and needs more research done on it.</p>"},
+    { "type": "image", "key": "pyrite-1", "caption": ""}
+    ]
   },
   {
     "name": "QA Engineering & Testing",
@@ -75,7 +85,7 @@
     "show": true,
     "category": "creative",
     "content": [
-    { "type": "text", "html": "<p>This is a piece I finished last week. It explores the intersection of light and memory.</p>" },
+    { "type": "text", "html": "<p>The flag of Bariumana is a symbol of unified personal identity and pride no matter the outside environment! It shows clearly that I have a clear plan for my time and energy on this planet.</p>" },
     { "type": "image", "key": "bariumana-flag-png", "caption": "Bariumana flag. Made by Jenny Barium in 2021", "alt": "colors inspired by nature and scientific concepts" }
     ]
   },
