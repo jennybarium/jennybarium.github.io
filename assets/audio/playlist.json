@@ -1,8 +1,8 @@
 {
   "tracks": [
-    { "title": "AURORA_You_Can’t_Run_From_Yourself.mp3", "src": "assets/audio/AURORA_You_Can’t_Run_From_Yourself.mp3" },
+    { "title": "AURORA_You_Cant_Run_From_Yourself.mp3", "src": "assets/audio/AURORA_You_Cant_Run_From_Yourself.mp3" },
     { "title": "Arcane_Imagine_Dragons_Enemy_with_JID.mp3", "src": "assets/audio/Arcane_Imagine_Dragons_Enemy_with_JID.mp3" },
-    { "title": "4_Non_Blondes_What's_Up.mp3", "src": "assets/audio/4_Non_Blondes_What's_Up.mp3" },
+    { "title": "4_Non_Blondes_Whats_Up.mp3", "src": "assets/audio/4_Non_Blondes_Whats_Up.mp3" },
     { "title": "Alexia_Evellyn_Stand_In_Your_Power.mp3", "src": "assets/audio/Alexia_Evellyn_Stand_In_Your_Power.mp3" },
     { "title": "And_We_Run_(feat._Xzibit).mp3", "src": "assets/audio/And_We_Run_(feat._Xzibit).mp3" }
   ],
