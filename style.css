@@ -143,10 +143,9 @@ button { font-family: inherit; cursor: pointer; }
   height: 100%; width: 0%; background: rgba(244,235,208,0.15);
   position: absolute; left: 0; top: 0; pointer-events: none; z-index: 1;
 }
-.player-bar-fill {
-  height: 100%; width: 0%; background: var(--ochre);
-  pointer-events: none; position: absolute; left: 0; top: 0; z-index: 2;
-  transition: width 0.1s linear;
+.player-bar-fill{
+    height:100%; width:0%; background:var(--cyan); box-shadow:0 0 6px var(--cyan);
+    pointer-events:none; position:absolute; left:0; top:0; z-index:2;
 }
 .player-title.is-buffering::after {
   content: " · tuning..."; color: var(--ink-2); font-style: italic;

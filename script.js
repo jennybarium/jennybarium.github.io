@@ -379,25 +379,32 @@ async function initPlayer(){
 
     function loadTrack(i, autoplay){
         const list = currentList();
-        if(!list.length) return;
-
+        if(!list.length) {
+            title.textContent = mode === 'radio' ? 'no stations' : 'no tracks';
+            return;
+        }
+        
         index = (i + list.length) % list.length;
         const item = list[index];
+        
+        // Update title immediately
+        title.textContent = item.title || 'Unknown Track';
+        title.classList.remove('is-buffering');
+        
         audio.src = item.src;
-        title.textContent = item.title;
         sourceSelect.value = index;
-
+        
+        // Reset progress
         progress.style.width = '0%';
         buffered.style.width = '0%';
-        title.classList.remove('is-buffering');
-
         timeCurrent.textContent = '0:00';
         timeDuration.textContent = mode === 'radio' ? 'LIVE' : '0:00';
         progressBar.style.cursor = mode === 'radio' ? 'default' : 'pointer';
-
+        
         if(autoplay){
-            audio.play().catch(() => {
-                title.textContent = `unable to play — check source`;
+            audio.play().catch((err) => {
+                console.error('Playback error:', err);
+                title.textContent = ' playback error';
             });
             playBtn.textContent = '❚❚';
             playBtn.setAttribute('aria-label', 'Pause');
@@ -454,12 +461,13 @@ async function initPlayer(){
     sourceSelect.addEventListener('change', () => {
         loadTrack(parseInt(sourceSelect.value, 10), true);
     });
-
     audio.addEventListener('timeupdate', () => {
         if(audio.duration && isFinite(audio.duration)){
-            progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+            const percent = (audio.currentTime / audio.duration) * 100;
+            progress.style.width = `${percent}%`;
             timeCurrent.textContent = formatTime(audio.currentTime);
             timeDuration.textContent = formatTime(audio.duration);
+            // Debug: console.log('Progress:', percent.toFixed(1) + '%');
         }
     });
 
