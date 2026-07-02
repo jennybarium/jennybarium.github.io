@@ -112,4 +112,8 @@ Newest-dated entry always shows first automatically.
 2. Add one line to `media.json` (key → path).
 3. Reference that key in a topic's content block (or write raw HTML if
    you prefer).
+<<<<<<< HEAD
 4. Save. Refresh the page — no build step, no server restart needed.
+=======
+4. Save. Refresh the page — no build step, no server restart needed.
+>>>>>>> ebc0658004706a10d9fc294b175e5b666803f1ce
