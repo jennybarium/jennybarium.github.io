@@ -217,10 +217,6 @@ function refreshAccountView(){
     if (window.Auth.isLoggedIn()) {
         loggedOut.hidden = true;
         loggedIn.hidden = false;
-        // Always reset the login/register sub-view so nothing stale is
-        // left open underneath the next time loggedOutView is shown
-        // again (e.g. after logging out).
-        resetAccountSubView();
         document.getElementById('whoami').textContent = window.Auth.getUsername();
         document.getElementById('chatLog').innerHTML = '';
         seenMessageKeys.clear();
@@ -325,7 +321,11 @@ async function pollOnce(){
 function startPolling(){
     stopPolling();
     pollOnce();
-    chatPollTimer = setInterval(pollOnce, 8000); // 8s poll — gentle on the free tier
+    // 30s poll — chat reads used to be the main KV-read driver (a list()
+    // plus one get() per unread message, every 8s, per open panel).
+    // Combined with the metadata-based poll on the Worker side, this
+    // keeps chat comfortably inside the free-tier daily KV limits.
+    chatPollTimer = setInterval(pollOnce, 30000);
 }
 function stopPolling(){
     if (chatPollTimer) clearInterval(chatPollTimer);
@@ -339,36 +339,13 @@ function updateAccountDot(){
     toggle.addEventListener('click', () => { dot.hidden = true; });
 }
 
-/* Applies Worker-driven site config: shows/hides the announcement
-   banner and, if maintenanceMode is on, disables the account panel's
-   forms rather than pretending the backend still works. Fails open
-   (site behaves normally) if the config fetch itself fails. */
+/* Applies Worker-driven site config: if maintenanceMode is on,
+   disables the account panel's forms rather than pretending the
+   backend still works. Fails open (site behaves normally) if the
+   config fetch itself fails. */
 async function applySiteConfig(){
     if (!window.SiteConfig) return;
     const config = await window.SiteConfig.load();
-
-    const banner = document.getElementById('announcementBanner');
-    const textEl = document.getElementById('announcementText');
-    const closeBtn = document.getElementById('announcementClose');
-    if (banner && textEl) {
-        if (config.announcement && config.announcement.text) {
-            const dismissedKey = `dismissed_announcement:${config.announcement.text}`;
-            if (!sessionStorage.getItem(dismissedKey)) {
-                textEl.textContent = config.announcement.text;
-                banner.dataset.tone = config.announcement.tone || 'info';
-                banner.hidden = false;
-                document.body.classList.add('has-announcement');
-                closeBtn.onclick = () => {
-                    banner.hidden = true;
-                    document.body.classList.remove('has-announcement');
-                    try { sessionStorage.setItem(dismissedKey, '1'); } catch (e) { /* ignore */ }
-                };
-            }
-        } else {
-            banner.hidden = true;
-            document.body.classList.remove('has-announcement');
-        }
-    }
 
     if (config.maintenanceMode) {
         const loginForm = document.getElementById('loginForm');

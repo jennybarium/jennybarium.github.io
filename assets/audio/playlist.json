@@ -12,6 +12,9 @@
     { "title": "Metal Express Radio — Oslo 🇳🇴", "src": "https://s39.myradiostream.com/:11590/;?" },
     { "title": "KEXP — Seattle 🇺🇸", "src": "https://kexp.streamguys1.com/kexp160.aac" },
     { "title": "Kyrgyzstan Obondoru 🇰🇬", "src": "https://cdn.radioplayer.kg:8443/obondoru64" },
-    { "title": "Pyongyang FM 105.2 🇰🇵", "src": "https://listen7.myradio24.com/69366" }
+    { "title": "Pyongyang FM 105.2 🇰🇵", "src": "https://listen7.myradio24.com/69366" },
+    { "title": "Indie X FM 🇺🇸", "src": "https://kathy.torontocast.com:2695/stream" },
+    { "title": "La Radio Allumée 103.3 FM - CHAA 🇨🇦", "src": "https://arcq.streamb.live/SB00211" },
+    { "title": "Qazaq Radiosy 🇰🇿", "src": "https://radio-streams.kaztrk.kz/qazradio/qazradio/icecast.audio" }  
   ]
 }

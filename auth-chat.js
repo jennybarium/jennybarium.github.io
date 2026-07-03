@@ -274,16 +274,15 @@ function sendVisitBeacon() {
 }
 
 /* ---------------------------------------------------------------- */
-/* Site config — Worker-driven announcement banner / maintenance     */
-/* mode / feature flags. Cached briefly client-side so it's cheap    */
-/* to call on every load without slowing the page down.              */
+/* Site config — Worker-driven maintenance mode / feature flags.     */
+/* Cached briefly client-side so it's cheap to call on every load    */
+/* without slowing the page down.                                    */
 /* ---------------------------------------------------------------- */
 
 const SiteConfig = {
   _cache: null,
   _cachedAt: 0,
   DEFAULTS: {
-    announcement: null,
     maintenanceMode: false,
     features: { chat: true, game: true, oracle: true },
   },

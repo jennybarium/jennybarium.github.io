@@ -282,37 +282,6 @@ button { font-family: inherit; cursor: pointer; }
 /* Remove tech scanlines and vignette */
 .scanlines, .vignette { display: none; }
 
-/* Announcement banner — Worker-driven, dismissible */
-.announcement-banner {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 300;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 9px 44px 9px 16px;
-  background: linear-gradient(90deg, rgba(157,140,255,0.22), rgba(255,143,177,0.18));
-  border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(8px);
-  font-family: var(--body);
-  font-size: 13px;
-  color: var(--ink-0);
-  text-align: center;
-}
-.announcement-banner[data-tone="warning"] {
-  background: linear-gradient(90deg, rgba(255,210,122,0.22), rgba(255,111,156,0.18));
-}
-.announcement-close {
-  position: absolute;
-  right: 12px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; color: var(--ink-2);
-  font-size: 13px; line-height: 1; padding: 4px;
-}
-.announcement-close:hover { color: var(--ink-0); }
-body.has-announcement .topbar { top: 34px; }
-body.has-announcement .scene { top: 34px; }
-
 /* Elegant Topbar */
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
@@ -1213,6 +1182,7 @@ Account / login / encrypted chat
   flex-direction: column;
   min-height: 0;
 }
+.account-view[hidden] { display: none; }
 .account-view-head { margin-bottom: 4px; }
 .account-view-head--row {
   display: flex;
