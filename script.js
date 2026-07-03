@@ -1081,7 +1081,7 @@ function renderFullTopicPage(topic) {
     const categoryColor = CATEGORY_COLORS[topic.category] || CATEGORY_COLORS.default;
     return `
         <div style="margin-bottom: 32px;">
-            <a href="#" onclick="history.back(); return false;" style="color: var(--ink-2); text-decoration: none; font-family: var(--body); font-size: 14px; letter-spacing: 0.05em;">← Back to graph</a>
+            <a href="#" onclick="history.back(); return false;" class="back-to-main-link">← Back to the main page</a>
         </div>
         <div class="content-eyebrow" style="color: ${categoryColor};">// ${topic.category || 'uncategorized'}</div>
         <h1 style="font-family: var(--disp); font-size: clamp(2rem, 5vw, 3.2rem); margin: 0 0 24px; border-bottom: 1px solid var(--line); padding-bottom: 20px; color: var(--ink-0);">${topic.name}</h1>
@@ -1419,6 +1419,18 @@ async function initPlayer() {
   const sourcePickerBtn = document.getElementById('sourcePickerBtn');
   const sourcePickerPopup = document.getElementById('sourcePickerPopup');
   const sourcePickerScrim = document.getElementById('sourcePickerScrim');
+  // .player has `transform: translateX(-50%)` for centering, which creates
+  // a new containing block for any position:fixed descendant — that was
+  // trapping the popup/scrim relative to .player instead of the viewport,
+  // pushing the sheet off the top of the screen on compact layouts.
+  // Move them out to <body> so position:fixed resolves against the
+  // viewport as intended.
+  if (sourcePickerPopup && sourcePickerPopup.parentElement !== document.body) {
+    document.body.appendChild(sourcePickerPopup);
+  }
+  if (sourcePickerScrim && sourcePickerScrim.parentElement !== document.body) {
+    document.body.appendChild(sourcePickerScrim);
+  }
   const playerEl = document.getElementById('player');
 
   audio.volume = parseFloat(volume.value);

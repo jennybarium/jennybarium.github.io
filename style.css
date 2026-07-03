@@ -283,6 +283,16 @@ button { font-family: inherit; cursor: pointer; }
 .scanlines, .vignette { display: none; }
 
 /* Elegant Topbar */
+.back-to-main-link {
+  display: inline-block;
+  color: var(--ink-1);
+  text-decoration: none;
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+}
+.back-to-main-link:hover { color: var(--ochre); }
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
   display: flex; align-items: center;
@@ -735,6 +745,13 @@ button { font-family: inherit; cursor: pointer; }
 
   .player-volume {
     display: none; /* system volume is used on mobile; keeps the bar uncluttered */
+  }
+
+  /* Mobile topbar wraps to multiple rows (brand hidden, player stacks),
+     so it's taller than the desktop 120px allows for — push the
+     full-page topic view down further to clear it. */
+  #fullTopicContainer {
+    padding-top: 170px !important;
   }
 }
 
