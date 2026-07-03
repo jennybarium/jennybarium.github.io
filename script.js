@@ -1415,7 +1415,6 @@ async function initPlayer() {
   const timeDuration = document.getElementById('timeDuration');
   const volume = document.getElementById('volume');
   const title = document.getElementById('trackTitle');
-  const sourceSelect = document.getElementById('sourceSelect');
   const sourcePickerBtn = document.getElementById('sourcePickerBtn');
   const sourcePickerPopup = document.getElementById('sourcePickerPopup');
   const sourcePickerScrim = document.getElementById('sourcePickerScrim');
@@ -1470,17 +1469,6 @@ async function initPlayer() {
     return m + ':' + s;
   }
 
-  function renderSourceSelect() {
-    sourceSelect.innerHTML = '';
-    currentList().forEach((item, i) => {
-      const opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = formatTitle(item.title);
-      sourceSelect.appendChild(opt);
-    });
-    renderSourcePickerPopup();
-  }
-
   function renderSourcePickerPopup() {
     if (!sourcePickerPopup) return;
     sourcePickerPopup.innerHTML = '';
@@ -1522,7 +1510,7 @@ async function initPlayer() {
 
     [prevBtn, nextBtn, shuffleBtn].forEach(b => b.disabled = mode === 'radio');
     closeSourcePicker();
-    renderSourceSelect();
+    renderSourcePickerPopup();
     audio.pause();
     playBtn.textContent = '▶';
     playBtn.setAttribute('aria-label', 'Play');
@@ -1540,7 +1528,6 @@ async function initPlayer() {
 
     audio.src = item.src;
     title.textContent = formatTitle(item.title);
-    sourceSelect.value = index;
 
     progress.style.width = '0%';
     buffered.style.width = '0%';
@@ -1615,10 +1602,6 @@ async function initPlayer() {
   shuffleBtn.addEventListener('click', () => {
     shuffle = !shuffle;
     shuffleBtn.classList.toggle('is-active', shuffle);
-  });
-
-  sourceSelect.addEventListener('change', () => {
-    loadTrack(parseInt(sourceSelect.value, 10), true);
   });
 
   if (sourcePickerBtn) {

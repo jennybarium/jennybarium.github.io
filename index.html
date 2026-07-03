@@ -35,6 +35,10 @@
   </div>
 
   <div class="player" id="player" aria-label="Audio player">
+    <button id="sourcePickerBtn" class="player-title-btn" aria-haspopup="listbox" aria-expanded="false">
+      <span id="trackTitle" class="player-title">loading…</span>
+      <span class="player-title-caret" aria-hidden="true">▾</span>
+    </button>
     <div class="player-row">
       <div class="player-controls">
         <button id="prevBtn" class="player-btn" aria-label="Previous track">⏮</button>
@@ -42,15 +46,12 @@
         <button id="nextBtn" class="player-btn" aria-label="Next track">⏭</button>
         <button id="shuffleBtn" class="player-btn" aria-label="Toggle shuffle">🔀</button>
       </div>
-      <div class="player-title" id="trackTitle">loading…</div>
       <div class="player-extras">
         <button id="modeToggle" class="player-mode-switch" aria-label="Switch source type" role="switch" aria-checked="false">
           <span class="mode-icon mode-icon--music" aria-hidden="true">🎵</span>
           <span class="mode-knob"></span>
           <span class="mode-icon mode-icon--radio" aria-hidden="true">📻</span>
         </button>
-        <select id="sourceSelect" class="player-source" aria-label="Audio source"></select>
-        <button id="sourcePickerBtn" class="player-source-mobile-btn" aria-label="Choose track or station" aria-haspopup="listbox" aria-expanded="false">☰</button>
         <input id="volume" class="player-volume" type="range" min="0" max="1" step="0.01" value="0.6" aria-label="Volume">
       </div>
     </div>

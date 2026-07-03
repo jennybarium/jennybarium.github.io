@@ -459,23 +459,48 @@ button { font-family: inherit; cursor: pointer; }
   border-color: var(--terra);
 }
 
+.player-title-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  background: none;
+  border: none;
+  padding: 0 0 6px;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  border-bottom: 1px solid rgba(157,140,255,0.14);
+}
+
+.player-title-btn:hover .player-title { color: var(--ochre); }
+.player-title-btn:hover .player-title-caret { color: var(--ochre); }
+
 .player-title {
-  min-width: 80px;
-  flex: 1 1 0%;
   font-size: 11px;
   letter-spacing: 0.03em;
   color: var(--ink-1);
   white-space: normal;
-  overflow-wrap: normal;
-  word-break: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
   font-family: var(--body);
   line-height: 1.35;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .player-title.is-buffering::after {
   content: " · buffering…";
   color: var(--ink-2);
   font-style: italic;
+}
+
+.player-title-caret {
+  flex: none;
+  font-size: 10px;
+  color: var(--ink-2);
+  transition: color 0.2s;
 }
 
 .player-bar {
@@ -591,46 +616,10 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 0 0 8px rgba(255,143,177,0.55);
 }
 
-.player-source {
-  background: var(--bg-2);
-  color: var(--ink-1);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  font-size: 10px;
-  padding: 4px 8px;
-  max-width: 120px;
-  font-family: var(--body);
-  cursor: pointer;
-}
-
 .player-volume {
   width: 60px;
   accent-color: var(--ochre);
   cursor: pointer;
-}
-
-/* Mobile source picker — hidden on desktop, where the native <select>
-   dropdown already works fine. */
-.player-source-mobile-btn {
-  display: none;
-  width: 26px;
-  height: 26px;
-  flex: none;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink-1);
-  font-size: 12px;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition: all 0.2s;
-}
-.player-source-mobile-btn:hover,
-.player-source-mobile-btn:active {
-  background: rgba(157, 140, 255, 0.12);
-  border-color: var(--ochre);
-  color: var(--ochre);
 }
 
 .source-picker-scrim {
@@ -727,20 +716,6 @@ button { font-family: inherit; cursor: pointer; }
 
   .player-row {
     flex-wrap: wrap;
-  }
-
-  .player-title {
-    flex-basis: 100%;
-    order: 3;
-    white-space: normal;
-  }
-
-  .player-source {
-    display: none; /* native dropdown is unusable on phones — replaced by the popup button */
-  }
-
-  .player-source-mobile-btn {
-    display: flex; /* opens the mobile track/station picker popup */
   }
 
   .player-volume {
