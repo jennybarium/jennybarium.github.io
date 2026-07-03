@@ -135,6 +135,68 @@ believable shoreline: wet sand, a curling wave edge (SVG), pale
 foam lace, and glowing plankton that flicker along the waterline
 the way real bioluminescent algae does when the surf disturbs it.
 --------------------------------------------------------- */
+/* ---------------------------------------------------------
+Palm silhouettes — procedurally drawn trunk + fronds (SVG,
+generated per-tree in JS), placed low along both edges so
+they read against the horizon like the reference photo.
+--------------------------------------------------------- */
+.scene .palms {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.scene .palm {
+  position: absolute;
+  bottom: 20vmin;
+  transform-origin: bottom center;
+  opacity: 0.94;
+  filter: brightness(0) saturate(100%);
+}
+.scene .palm svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+@media (max-width: 768px) {
+  .scene .palm { bottom: 17vmin; opacity: 0.9; }
+}
+
+/* ---------------------------------------------------------
+Ocean wave-glow — short glowing arcs drifting in the dark water
+above the shoreline, echoing distant breaking bioluminescent
+crests the way they read in long-exposure night photography.
+--------------------------------------------------------- */
+.scene .ocean-wave {
+  position: absolute;
+  left: calc(var(--owx, 0) * 1%);
+  bottom: calc(24vmin + (var(--owy, 0) * 1vmin) + 2vmin);
+  width: calc(var(--owwidth, 30) * 1%);
+  height: 2px;
+  border-radius: 50%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(80,230,255,0.5) 25%,
+    rgba(130,255,230,0.75) 50%,
+    rgba(80,230,255,0.45) 75%,
+    transparent 100%);
+  filter: blur(2px);
+  opacity: 0;
+  animation: ocean-wave-roll calc(var(--owduration, 7) * 1s) ease-in calc(var(--owdelay, 0) * 1s) infinite;
+}
+
+@keyframes ocean-wave-roll {
+  0%   { opacity: 0; transform: translateY(-6px) scaleX(0.85); }
+  10%  { opacity: 0.85; }
+  55%  { opacity: 0.55; }
+  100% { opacity: 0; transform: translateY(8px) scaleX(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene .ocean-wave { animation: none; opacity: 0.4; }
+}
+
 .scene .beach {
   position: absolute;
   left: 0;

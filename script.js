@@ -128,7 +128,7 @@ function initAuroraScene(){
     // fewer animated layers on small/low-power screens: same look at a
     // glance, meaningfully less paint & battery work on phones
     const isSmallScreen = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-    const STAR_COUNT = isSmallScreen ? 24 : 40;
+    const STAR_COUNT = isSmallScreen ? 34 : 70;
     const LIGHT_COUNT = isSmallScreen ? 14 : 24;
 
     // three hues drawn from the site's iris/coral/kelp/amber family so the
@@ -153,6 +153,9 @@ function initAuroraScene(){
         star.style.setProperty('--delay', randomInRange(0, 8));
         frag.appendChild(star);
     }
+
+    const palms = buildPalmSilhouettes(isSmallScreen);
+    frag.appendChild(palms);
 
     const beach = buildBioluminescentBeach(isSmallScreen);
     frag.appendChild(beach);
@@ -201,6 +204,23 @@ function buildBioluminescentBeach(isSmallScreen){
     const beach = document.createElement('div');
     beach.className = 'beach';
 
+    // faint receding wave-glow streaks out in the "ocean" above the
+    // shoreline — short glowing arcs that roll in and fade, echoing
+    // how bioluminescent wave crests look from a distance at night
+    const OCEAN_WAVE_COUNT = isSmallScreen ? 4 : 7;
+    const oceanFrag = document.createDocumentFragment();
+    for (let w = 0; w < OCEAN_WAVE_COUNT; w++){
+        const streak = document.createElement('div');
+        streak.className = 'ocean-wave';
+        streak.style.setProperty('--owy', randomInRange(-14, 4).toFixed(1));
+        streak.style.setProperty('--owx', randomInRange(-5, 55).toFixed(1));
+        streak.style.setProperty('--owwidth', randomInRange(24, 55).toFixed(1));
+        streak.style.setProperty('--owduration', randomInRange(5, 9).toFixed(2));
+        streak.style.setProperty('--owdelay', randomInRange(0, 8).toFixed(2));
+        oceanFrag.appendChild(streak);
+    }
+    beach.appendChild(oceanFrag);
+
     const sand = document.createElement('div');
     sand.className = 'beach-sand';
     beach.appendChild(sand);
@@ -245,7 +265,7 @@ function buildBioluminescentBeach(isSmallScreen){
 
     // scattered glowing plankton, concentrated in a band around the
     // waterline (y 18–34%) with a few stragglers up on the wet sand
-    const PLANKTON_COUNT = isSmallScreen ? 26 : 46;
+    const PLANKTON_COUNT = isSmallScreen ? 34 : 70;
     const HUE_CHOICES = [165, 175, 185, 155, 195]; // teal → cyan family
     const frag = document.createDocumentFragment();
     for (let p = 0; p < PLANKTON_COUNT; p++) {
@@ -267,6 +287,71 @@ function buildBioluminescentBeach(isSmallScreen){
     return beach;
 }
 
+
+/* ---------------------------------------------------------
+Palm silhouette generator
+Draws a handful of procedural palm trees (trunk + randomized
+fronds, each tree slightly different) as flat black SVG shapes
+along both edges of the scene, low enough to sit against the
+horizon the way they do in the reference photo. Purely
+decorative and non-interactive.
+--------------------------------------------------------- */
+function buildPalmSilhouettes(isSmallScreen){
+    const wrap = document.createElement('div');
+    wrap.className = 'palms';
+
+    const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+    function palmSVG(){
+        const fronds = 6 + Math.round(randomInRange(0, 2));
+        let paths = '';
+        for (let i = 0; i < fronds; i++){
+            const ang = -90 + (i - fronds / 2) * (150 / fronds) + randomInRange(-6, 6);
+            const len = randomInRange(70, 108);
+            const rad = ang * Math.PI / 180;
+            const droop = randomInRange(10, 22);
+            const cx = 60 + Math.cos(rad) * len * 0.55;
+            const cy = 40 + Math.sin(rad) * len * 0.55 - droop;
+            const ex = 60 + Math.cos(rad) * len;
+            const ey = 40 + Math.sin(rad) * len;
+            paths += `<path d="M60,40 Q${cx.toFixed(1)},${cy.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}" stroke="black" stroke-width="${randomInRange(6, 9).toFixed(1)}" fill="none" stroke-linecap="round"/>`;
+        }
+        return `<svg viewBox="0 0 120 260" preserveAspectRatio="none">
+            <path d="M55,260 C50,200 65,150 58,100 C56,80 62,55 60,40" stroke="black" stroke-width="8" fill="none" stroke-linecap="round"/>
+            ${paths}
+        </svg>`;
+    }
+
+    // clustered toward the left and right edges, echoing the reference
+    // photo's framing; heights/scales vary so it doesn't look tiled
+    const positions = isSmallScreen
+        ? [
+            { x: -2, h: 26, scale: 0.85 },
+            { x: 6, h: 22, scale: 0.7 },
+            { x: 86, h: 24, scale: 0.75 },
+            { x: 96, h: 20, scale: 0.6 }
+        ]
+        : [
+            { x: 1, h: 32, scale: 1.05 },
+            { x: 8, h: 27, scale: 0.8 },
+            { x: 15, h: 36, scale: 1.2 },
+            { x: 76, h: 30, scale: 0.9 },
+            { x: 84, h: 34, scale: 1.1 },
+            { x: 92, h: 26, scale: 0.75 }
+        ];
+
+    positions.forEach(p => {
+        const tree = document.createElement('div');
+        tree.className = 'palm';
+        tree.style.left = p.x + '%';
+        tree.style.width = (58 * p.scale) + 'px';
+        tree.style.height = p.h + 'vh';
+        tree.innerHTML = palmSVG();
+        wrap.appendChild(tree);
+    });
+
+    return wrap;
+}
 
 function initMeteors(scene){
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
