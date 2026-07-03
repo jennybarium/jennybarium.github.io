@@ -1552,12 +1552,16 @@ async function initPlayer() {
     renderSourcePickerPopup();
 
     if (autoplay) {
-      audio.play().catch((err) => {
+      audio.play().then(() => {
+        playBtn.textContent = '❚❚';
+        playBtn.setAttribute('aria-label', 'Pause');
+      }).catch((err) => {
+        if (err && err.name === 'AbortError') return; // interrupted by a subsequent load/play, not a real error
         console.error('Playback error:', err);
         title.textContent = 'playback error';
+        playBtn.textContent = '▶';
+        playBtn.setAttribute('aria-label', 'Play');
       });
-      playBtn.textContent = '❚❚';
-      playBtn.setAttribute('aria-label', 'Pause');
     }
   }
 
@@ -1588,12 +1592,16 @@ async function initPlayer() {
   playBtn.addEventListener('click', () => {
     if (!currentList().length) return;
     if (audio.paused) {
-      audio.play().catch((err) => {
+      audio.play().then(() => {
+        playBtn.textContent = '❚❚';
+        playBtn.setAttribute('aria-label', 'Pause');
+      }).catch((err) => {
+        if (err && err.name === 'AbortError') return;
         console.error('Playback error:', err);
         title.textContent = 'playback error';
+        playBtn.textContent = '▶';
+        playBtn.setAttribute('aria-label', 'Play');
       });
-      playBtn.textContent = '❚❚';
-      playBtn.setAttribute('aria-label', 'Pause');
     } else {
       audio.pause();
       playBtn.textContent = '▶';
