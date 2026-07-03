@@ -154,9 +154,8 @@ function initAuroraScene(){
         frag.appendChild(star);
     }
 
-    const shore = document.createElement('div');
-    shore.className = 'shore';
-    frag.appendChild(shore);
+    const beach = buildBioluminescentBeach(isSmallScreen);
+    frag.appendChild(beach);
 
     const moon = document.createElement('div');
     moon.className = 'moon';
@@ -188,11 +187,87 @@ function initAuroraScene(){
 }
 
 /* ---------------------------------------------------------
-Meteors — spawns colorful streaks at random angles, positions,
-speeds and hues on a loose interval. Each meteor removes itself
-from the DOM once its animation finishes, so this never leaks
-nodes. Respects prefers-reduced-motion.
+Bioluminescent beach scene builder
+Draws a natural, irregular wave-edge silhouette and a lacy foam
+line as SVG paths (so they read as an actual curling shoreline,
+not a straight gradient band), then scatters glowing "plankton"
+flecks along the waterline that flicker on/off individually —
+mimicking how real bioluminescent algae glow in bursts when the
+surf agitates them, rather than as one static wash of color.
 --------------------------------------------------------- */
+function buildBioluminescentBeach(isSmallScreen){
+    const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+    const beach = document.createElement('div');
+    beach.className = 'beach';
+
+    const sand = document.createElement('div');
+    sand.className = 'beach-sand';
+    beach.appendChild(sand);
+
+    // wave edge: an irregular horizontal wavy line, drawn once per
+    // load with slight randomization so the coastline isn't identical
+    // every visit, but always reads as a natural curling wave
+    const waveWrap = document.createElement('div');
+    waveWrap.className = 'beach-wave';
+    const waveY = 26;
+    let waveD = `M-10 ${waveY}`;
+    const waveSegments = 7;
+    for (let i = 0; i <= waveSegments; i++) {
+        const x = -10 + (i * (120 / waveSegments));
+        const y = waveY + Math.sin(i * 1.3) * 5 + randomInRange(-3, 3);
+        waveD += ` Q${x - 6} ${y + randomInRange(-4, 4)} ${x} ${y}`;
+    }
+    waveWrap.innerHTML = `<svg viewBox="0 0 100 40" preserveAspectRatio="none">
+        <path d="${waveD}" fill="none" stroke="rgba(120,235,255,0.35)" stroke-width="0.8" vector-effect="non-scaling-stroke"/>
+        <path d="${waveD} L110 40 L-10 40 Z" fill="rgba(8,14,16,0.9)"/>
+    </svg>`;
+    beach.appendChild(waveWrap);
+
+    // glow band that sits along the wave edge
+    const glow = document.createElement('div');
+    glow.className = 'beach-glow';
+    beach.appendChild(glow);
+
+    // thin lacy foam line, a second irregular path above the wave
+    const foamWrap = document.createElement('div');
+    foamWrap.className = 'beach-foam';
+    let foamD = `M-10 20`;
+    for (let i = 0; i <= 9; i++) {
+        const x = -10 + (i * 13);
+        const y = 20 + Math.sin(i * 2.1) * 6 + randomInRange(-3, 3);
+        foamD += ` T${x} ${y}`;
+    }
+    foamWrap.innerHTML = `<svg viewBox="0 0 100 40" preserveAspectRatio="none">
+        <path d="${foamD}" fill="none" stroke="rgba(235,250,248,0.5)" stroke-width="0.6" stroke-dasharray="0.2 1.6" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    </svg>`;
+    beach.appendChild(foamWrap);
+
+    // scattered glowing plankton, concentrated in a band around the
+    // waterline (y 18–34%) with a few stragglers up on the wet sand
+    const PLANKTON_COUNT = isSmallScreen ? 26 : 46;
+    const HUE_CHOICES = [165, 175, 185, 155, 195]; // teal → cyan family
+    const frag = document.createDocumentFragment();
+    for (let p = 0; p < PLANKTON_COUNT; p++) {
+        const fleck = document.createElement('div');
+        fleck.className = 'plankton';
+        const nearLine = Math.random() < 0.75;
+        const py = nearLine ? randomInRange(16, 34) : randomInRange(34, 60);
+        fleck.style.setProperty('--px', randomInRange(0, 100).toFixed(1));
+        fleck.style.setProperty('--py', py.toFixed(1));
+        fleck.style.setProperty('--psize', randomInRange(1.2, 3.2).toFixed(2));
+        fleck.style.setProperty('--phue', HUE_CHOICES[Math.floor(Math.random() * HUE_CHOICES.length)]);
+        fleck.style.setProperty('--pduration', randomInRange(2.4, 5.5).toFixed(2));
+        fleck.style.setProperty('--pdelay', randomInRange(0, 6).toFixed(2));
+        fleck.style.setProperty('--ppeak', randomInRange(0.55, 1).toFixed(2));
+        frag.appendChild(fleck);
+    }
+    beach.appendChild(frag);
+
+    return beach;
+}
+
+
 function initMeteors(scene){
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 

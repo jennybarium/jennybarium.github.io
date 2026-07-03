@@ -129,27 +129,124 @@ northern lights. Fixed full-viewport, sits behind all content.
   animation: aurora-flicker calc(var(--duration, 2) * 1s) calc(var(--delay, 4) * 1s) infinite steps(1);
 }
 
-/* bioluminescent shoreline glow — replaces the old hill silhouette
-   with a soft, low, animated waterline of glowing plankton-teal light.
-   Single element, GPU-cheap (opacity/transform only). */
-.scene .shore {
+/* ---------------------------------------------------------
+Bioluminescent beach — replaces the old hill silhouette with a
+believable shoreline: wet sand, a curling wave edge (SVG), pale
+foam lace, and glowing plankton that flicker along the waterline
+the way real bioluminescent algae does when the surf disturbs it.
+--------------------------------------------------------- */
+.scene .beach {
   position: absolute;
-  left: -10%;
-  right: -10%;
-  bottom: -6vmin;
-  height: 26vmin;
-  background:
-    radial-gradient(ellipse 40% 100% at 20% 100%, rgba(93,255,225,0.22), transparent 70%),
-    radial-gradient(ellipse 35% 100% at 55% 100%, rgba(63,224,255,0.18), transparent 70%),
-    radial-gradient(ellipse 45% 100% at 85% 100%, rgba(111,227,196,0.20), transparent 70%);
-  filter: blur(6px);
-  opacity: 0.8;
-  animation: shore-glow 14s ease-in-out infinite alternate;
+  left: 0;
+  right: 0;
+  bottom: -2vmin;
+  height: 24vmin;
+  min-height: 130px;
 }
 
-@keyframes shore-glow {
-  0%   { opacity: 0.6; transform: translateX(0); }
-  100% { opacity: 0.9; transform: translateX(2%); }
+/* dry-to-wet sand gradient, faintly warm so it reads as sand and
+   not just "dark", with a cool waterline where it meets the surf */
+.scene .beach-sand {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      transparent 0%,
+      rgba(20,26,24,0.55) 22%,
+      rgba(18,24,22,0.88) 55%,
+      rgba(12,17,18,0.97) 100%),
+    linear-gradient(180deg,
+      rgba(80,70,55,0.10) 0%,
+      rgba(50,46,40,0.06) 30%,
+      transparent 60%);
+}
+
+/* the curling wave edge itself, drawn as a wavy SVG line so it has
+   an actual natural silhouette rather than a straight gradient band */
+.scene .beach-wave {
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  top: 8vmin;
+  height: 9vmin;
+  min-height: 46px;
+}
+.scene .beach-wave svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* soft glow sitting right along the waterline — where bioluminescence
+   concentrates as waves break and agitate the plankton */
+.scene .beach-glow {
+  position: absolute;
+  left: -5%;
+  right: -5%;
+  top: 9.5vmin;
+  height: 8vmin;
+  background:
+    radial-gradient(ellipse 18% 100% at 10% 40%, rgba(80,255,220,0.30), transparent 75%),
+    radial-gradient(ellipse 22% 100% at 32% 55%, rgba(60,235,255,0.24), transparent 75%),
+    radial-gradient(ellipse 16% 100% at 52% 35%, rgba(110,255,210,0.28), transparent 75%),
+    radial-gradient(ellipse 20% 100% at 70% 50%, rgba(60,220,255,0.22), transparent 75%),
+    radial-gradient(ellipse 18% 100% at 90% 40%, rgba(90,255,225,0.26), transparent 75%);
+  filter: blur(5px);
+  mix-blend-mode: screen;
+  animation: surf-breathe 6s ease-in-out infinite alternate;
+}
+
+@keyframes surf-breathe {
+  0%   { opacity: 0.55; transform: translateX(0) scaleY(1); }
+  100% { opacity: 0.95; transform: translateX(1.5%) scaleY(1.15); }
+}
+
+/* individual glowing plankton flecks, scattered near the waterline.
+   Each one gets randomized position/size/timing from JS so the
+   sparkle pattern feels organic rather than tiled. */
+.scene .plankton {
+  position: absolute;
+  left: calc(var(--px, 50) * 1%);
+  top: calc(var(--py, 50) * 1%);
+  width: calc(var(--psize, 2) * 1px);
+  height: calc(var(--psize, 2) * 1px);
+  border-radius: 50%;
+  background: hsl(var(--phue, 165), 100%, 78%);
+  box-shadow: 0 0 6px 1.5px hsla(var(--phue, 165), 100%, 70%, 0.9);
+  opacity: 0;
+  animation: plankton-glow calc(var(--pduration, 3) * 1s) ease-in-out calc(var(--pdelay, 0) * 1s) infinite;
+  will-change: opacity, transform;
+}
+
+@keyframes plankton-glow {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  15% { opacity: 0; }
+  30% { opacity: var(--ppeak, 0.9); transform: scale(1); }
+  55% { opacity: calc(var(--ppeak, 0.9) * 0.55); transform: scale(0.85); }
+  75% { opacity: 0; transform: scale(0.6); }
+}
+
+/* faint receding foam lace, a second thin wavy line above the main
+   wave edge, for the lacy trailing edge real surf leaves on sand */
+.scene .beach-foam {
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  top: 6.2vmin;
+  height: 4vmin;
+  min-height: 22px;
+  opacity: 0.5;
+}
+.scene .beach-foam svg { width: 100%; height: 100%; display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .scene .beach-glow { animation: none; opacity: 0.75; }
+  .scene .plankton { animation: none; opacity: var(--ppeak, 0.6); }
+}
+
+@media (max-width: 768px) {
+  .scene .beach { height: 20vmin; }
+  .scene .beach-glow { filter: blur(3px); }
 }
 
 .scene .moon {
@@ -271,7 +368,6 @@ in JS (see spawnMeteor in script.js). */
   .scene .moon { height: 9vmin; width: 9vmin; }
   .scene .lights { filter: blur(28px); }
   .scene .meteor { width: calc(var(--mlen, 140) * 0.7px); }
-  .scene .shore { filter: blur(4px); height: 20vmin; }
   /* lighter blur budget on phones: same shapes, cheaper GPU compositing */
   body::before, body::after { opacity: 0.35; }
 }
