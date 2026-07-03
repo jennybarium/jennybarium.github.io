@@ -481,14 +481,14 @@ body.has-announcement .scene { top: 34px; }
 }
 
 .player-title {
-  min-width: 0;
-  flex: 1;
+  min-width: 80px;
+  flex: 1 1 0%;
   font-size: 11px;
   letter-spacing: 0.03em;
   color: var(--ink-1);
   white-space: normal;
-  overflow-wrap: break-word;
-  word-break: break-word;
+  overflow-wrap: normal;
+  word-break: normal;
   font-family: var(--body);
   line-height: 1.35;
 }

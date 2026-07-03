@@ -38,6 +38,7 @@ function initAccountPanel(){
 
     wireForms();
     updateAccountDot();
+    refreshAccountView();
 
     // If already logged in from a previous visit, start polling quietly
     // in the background so the unread dot can light up even before the
@@ -73,6 +74,7 @@ function wireForms(){
 
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (window.Auth.isLoggedIn()) { refreshAccountView(); return; }
         errorEl.hidden = true;
         const btn = loginForm.querySelector('button[type="submit"]');
         const username = document.getElementById('loginUsername').value.trim().toLowerCase();
@@ -81,6 +83,7 @@ function wireForms(){
         try {
             await window.Auth.login(username, password);
             loginForm.reset();
+            document.getElementById('loggedOutView').hidden = true;
             refreshAccountView();
             startPolling();
         } catch (err) {
@@ -93,6 +96,7 @@ function wireForms(){
 
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (window.Auth.isLoggedIn()) { refreshAccountView(); return; }
         errorEl.hidden = true;
         const btn = registerForm.querySelector('button[type="submit"]');
         const username = document.getElementById('registerUsername').value.trim().toLowerCase();
@@ -103,6 +107,7 @@ function wireForms(){
             // auto-login right after registering
             await window.Auth.login(username, password);
             registerForm.reset();
+            document.getElementById('loggedOutView').hidden = true;
             refreshAccountView();
             startPolling();
         } catch (err) {

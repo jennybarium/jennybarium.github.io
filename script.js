@@ -244,6 +244,23 @@ async function loadJSON(path, fallback){
     }
 }
 
+/* ---------------------------------------------------------
+Lazy-load third-party libraries only when actually needed,
+instead of blocking initial page render for every visitor. */
+let _d3LoadPromise = null;
+function loadD3(){
+    if (window.d3) return Promise.resolve(window.d3);
+    if (_d3LoadPromise) return _d3LoadPromise;
+    _d3LoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://d3js.org/d3.v7.min.js';
+        script.onload = () => resolve(window.d3);
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+    return _d3LoadPromise;
+}
+
 async function loadData(){
     const [topics, media] = await Promise.all([
         loadJSON('topics.json', []),
@@ -253,6 +270,7 @@ async function loadData(){
     state.media  = media;
 
     renderNav();
+    await loadD3();
     renderGraph();
     refreshJournalForAuthState();
 
@@ -1420,6 +1438,19 @@ async function initPlayer() {
 
   function currentList() { return library[mode]; }
 
+  /* Filenames like "AURORA_You_Cant_Run_From_Yourself.mp3" have no
+     natural wrap points, which forces the browser into a one-letter-
+     per-line column when the player is narrow. Strip the extension and
+     swap separators for spaces so the title reads cleanly and wraps
+     normally like any other sentence. */
+  function formatTitle(raw) {
+    if (!raw) return 'Unknown Track';
+    return raw
+      .replace(/\.(mp3|wav|ogg|m4a|flac|aac)$/i, '')
+      .replace(/[_-]+/g, ' ')
+      .trim();
+  }
+
   function formatTime(sec) {
     if (!isFinite(sec)) return '0:00';
     const m = Math.floor(sec / 60);
@@ -1432,7 +1463,7 @@ async function initPlayer() {
     currentList().forEach((item, i) => {
       const opt = document.createElement('option');
       opt.value = i;
-      opt.textContent = item.title || 'Unknown Track';
+      opt.textContent = formatTitle(item.title);
       sourceSelect.appendChild(opt);
     });
     renderSourcePickerPopup();
@@ -1447,7 +1478,7 @@ async function initPlayer() {
       btn.className = 'source-picker-item';
       btn.setAttribute('role', 'option');
       btn.setAttribute('aria-selected', i === index ? 'true' : 'false');
-      btn.textContent = item.title || 'Unknown Track';
+      btn.textContent = formatTitle(item.title);
       btn.addEventListener('click', () => {
         loadTrack(i, true);
         closeSourcePicker();
@@ -1496,7 +1527,7 @@ async function initPlayer() {
     const item = list[index];
 
     audio.src = item.src;
-    title.textContent = item.title || 'Unknown Track';
+    title.textContent = formatTitle(item.title);
     sourceSelect.value = index;
 
     progress.style.width = '0%';
