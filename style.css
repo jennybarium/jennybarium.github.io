@@ -44,9 +44,11 @@ body {
   overflow-x: hidden;
   position: relative;
   background-image:
-    radial-gradient(ellipse 60% 45% at 15% 8%, rgba(157,140,255,0.16), transparent 60%),
-    radial-gradient(ellipse 55% 40% at 88% 18%, rgba(255,143,177,0.12), transparent 60%),
-    radial-gradient(ellipse 70% 50% at 50% 95%, rgba(111,227,196,0.10), transparent 65%),
+    radial-gradient(ellipse 60% 45% at 15% 8%, rgba(157,140,255,0.14), transparent 60%),
+    radial-gradient(ellipse 55% 40% at 88% 18%, rgba(255,143,177,0.10), transparent 60%),
+    radial-gradient(ellipse 80% 55% at 50% 100%, rgba(63,224,208,0.22), transparent 65%),
+    radial-gradient(ellipse 60% 30% at 20% 100%, rgba(111,227,196,0.16), transparent 60%),
+    radial-gradient(ellipse 60% 30% at 80% 100%, rgba(93,200,255,0.14), transparent 60%),
     url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
   background-attachment: fixed;
   animation: aurora-drift 40s ease-in-out infinite alternate;
@@ -110,6 +112,7 @@ northern lights. Fixed full-viewport, sits behind all content.
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  contain: strict;
 }
 
 .scene .star {
@@ -126,38 +129,52 @@ northern lights. Fixed full-viewport, sits behind all content.
   animation: aurora-flicker calc(var(--duration, 2) * 1s) calc(var(--delay, 4) * 1s) infinite steps(1);
 }
 
-.scene .hill {
-  background: var(--bg-0);
+/* bioluminescent shoreline glow — replaces the old hill silhouette
+   with a soft, low, animated waterline of glowing plankton-teal light.
+   Single element, GPU-cheap (opacity/transform only). */
+.scene .shore {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 22vmin;
-  width: 68vmin;
-  border-radius: 0 100% 0 0;
-  opacity: 0.9;
+  left: -10%;
+  right: -10%;
+  bottom: -6vmin;
+  height: 26vmin;
+  background:
+    radial-gradient(ellipse 40% 100% at 20% 100%, rgba(93,255,225,0.22), transparent 70%),
+    radial-gradient(ellipse 35% 100% at 55% 100%, rgba(63,224,255,0.18), transparent 70%),
+    radial-gradient(ellipse 45% 100% at 85% 100%, rgba(111,227,196,0.20), transparent 70%);
+  filter: blur(6px);
+  opacity: 0.8;
+  animation: shore-glow 14s ease-in-out infinite alternate;
 }
-.scene .hill::after {
-  content: "";
-  position: absolute;
-  height: 13vmin;
-  width: 50vmax;
-  background: var(--bg-0);
-  left: 0;
-  bottom: 0;
-  border-radius: 0 100% 0 0;
+
+@keyframes shore-glow {
+  0%   { opacity: 0.6; transform: translateX(0); }
+  100% { opacity: 0.9; transform: translateX(2%); }
 }
 
 .scene .moon {
-  height: 26vmin;
-  width: 26vmin;
+  height: 11vmin;
+  width: 11vmin;
+  max-height: 84px;
+  max-width: 84px;
+  min-height: 52px;
+  min-width: 52px;
   position: absolute;
   left: 8vmin;
   top: 8vmin;
-  background: radial-gradient(circle at 35% 35%, #f2eefc, #b7b3d6 70%);
   border-radius: 50%;
-  box-shadow: 0 0 60px 12px rgba(242,238,252,0.28);
-  filter: blur(2px);
-  opacity: 0.85;
+  /* natural cratered moon, drawn with layered radial-gradients
+     (no image request — keeps this scene dependency-free & fast) */
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255,255,255,0.55) 0%, transparent 5%),
+    radial-gradient(circle at 62% 44%, rgba(0,0,0,0.16) 0%, transparent 8%),
+    radial-gradient(circle at 44% 62%, rgba(0,0,0,0.14) 0%, transparent 7%),
+    radial-gradient(circle at 70% 66%, rgba(0,0,0,0.12) 0%, transparent 6%),
+    radial-gradient(circle at 28% 55%, rgba(0,0,0,0.10) 0%, transparent 5%),
+    radial-gradient(circle at 55% 22%, rgba(0,0,0,0.10) 0%, transparent 4%),
+    radial-gradient(circle at 38% 38%, #f5f1ec 0%, #d8d2c6 55%, #b9b2a4 100%);
+  box-shadow: 0 0 26px 6px rgba(245,241,236,0.22);
+  opacity: 0.92;
 }
 
 .scene .lights {
@@ -251,9 +268,12 @@ in JS (see spawnMeteor in script.js). */
 }
 
 @media (max-width: 768px) {
-  .scene .moon { height: 20vmin; width: 20vmin; }
-  .scene .lights { filter: blur(40px); }
+  .scene .moon { height: 9vmin; width: 9vmin; }
+  .scene .lights { filter: blur(28px); }
   .scene .meteor { width: calc(var(--mlen, 140) * 0.7px); }
+  .scene .shore { filter: blur(4px); height: 20vmin; }
+  /* lighter blur budget on phones: same shapes, cheaper GPU compositing */
+  body::before, body::after { opacity: 0.35; }
 }
 
 /* keep real content above the texture layers */

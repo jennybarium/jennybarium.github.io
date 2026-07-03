@@ -125,8 +125,11 @@ function initAuroraScene(){
 
     const randomInRange = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-    const STAR_COUNT = 40;
-    const LIGHT_COUNT = 24;
+    // fewer animated layers on small/low-power screens: same look at a
+    // glance, meaningfully less paint & battery work on phones
+    const isSmallScreen = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+    const STAR_COUNT = isSmallScreen ? 24 : 40;
+    const LIGHT_COUNT = isSmallScreen ? 14 : 24;
 
     // three hues drawn from the site's iris/coral/kelp/amber family so the
     // aurora always harmonizes with the rest of the palette
@@ -151,9 +154,9 @@ function initAuroraScene(){
         frag.appendChild(star);
     }
 
-    const hill = document.createElement('div');
-    hill.className = 'hill';
-    frag.appendChild(hill);
+    const shore = document.createElement('div');
+    shore.className = 'shore';
+    frag.appendChild(shore);
 
     const moon = document.createElement('div');
     moon.className = 'moon';
@@ -193,6 +196,7 @@ nodes. Respects prefers-reduced-motion.
 function initMeteors(scene){
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+    const isSmallScreen = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
     const HUE_CHOICES = [255, 330, 165, 40, 200, 20, 285];
     const randomInRange = (min, max) => Math.random() * (max - min) + min;
 
@@ -219,12 +223,13 @@ function initMeteors(scene){
     }
 
     function scheduleNext(){
-        // occasional, irregular timing so it feels natural rather than metronomic
-        const delay = randomInRange(1800, 5200);
+        // occasional, irregular timing so it feels natural rather than metronomic;
+        // a bit more sparse on phones to keep animation work light
+        const delay = isSmallScreen ? randomInRange(2600, 6800) : randomInRange(1800, 5200);
         setTimeout(() => {
             spawnMeteor();
-            // small chance of a quick double-streak
-            if (Math.random() < 0.18) setTimeout(spawnMeteor, randomInRange(150, 500));
+            // small chance of a quick double-streak (skipped on mobile)
+            if (!isSmallScreen && Math.random() < 0.18) setTimeout(spawnMeteor, randomInRange(150, 500));
             scheduleNext();
         }, delay);
     }
