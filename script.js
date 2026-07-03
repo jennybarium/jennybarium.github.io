@@ -245,18 +245,16 @@ async function loadJSON(path, fallback){
 }
 
 async function loadData(){
-    const [topics, diary, media] = await Promise.all([
+    const [topics, media] = await Promise.all([
         loadJSON('topics.json', []),
-        loadJSON('diary.json', []),
         loadJSON('media.json', {})
     ]);
     state.topics = topics;
-    state.diary  = diary;
     state.media  = media;
 
     renderNav();
-    renderJournal();
     renderGraph();
+    refreshJournalForAuthState();
 
     // --- new ---
     handleRoute();
@@ -450,13 +448,66 @@ function openContentPanel(topic){
 }
 
 /* ---------------------------------------------------------
-Journal log stream (diary.json)
+Journal log stream — PRIVATE. Diary entries live server-side in
+CONTENT_KV (key "private:diary") and are only ever fetched over
+the authenticated /api/private-content route, so a signed-out
+visitor never receives the entries at all (not even hidden in
+the DOM) — unlike topics/media, which are public by design.
 --------------------------------------------------------- */
+async function refreshJournalForAuthState(){
+    const list = document.getElementById('journalList');
+    const logEl = document.getElementById('journalLog');
+    if (!list || !logEl) return;
+
+    if (!window.Auth || !window.Auth.isLoggedIn()) {
+        state.diary = [];
+        renderJournalLocked();
+        return;
+    }
+
+    renderJournalLoading();
+    try {
+        const raw = await window.fetchPrivateContent('diary');
+        const entries = JSON.parse(raw);
+        state.diary = Array.isArray(entries) ? entries : [];
+        renderJournal();
+    } catch (e) {
+        // Not found / not authorized / malformed — fail closed, not with
+        // a confusing empty list that looks like "no entries exist".
+        state.diary = [];
+        renderJournalLocked();
+    }
+}
+
+function renderJournalLocked(){
+    const list = document.getElementById('journalList');
+    if (!list) return;
+    list.innerHTML = `<li class="journal-locked">
+        <div class="journal-locked-text">sign in to read the sketchbook</div>
+    </li>`;
+}
+
+function renderJournalLoading(){
+    const list = document.getElementById('journalList');
+    if (!list) return;
+    list.innerHTML = `<li class="journal-locked">
+        <div class="journal-locked-text">loading…</div>
+    </li>`;
+}
+
 function renderJournal(){
     const list = document.getElementById('journalList');
     list.innerHTML = '';
+
+    if (!state.diary.length) {
+        list.innerHTML = `<li class="journal-locked">
+            <div class="journal-locked-text">no entries yet</div>
+        </li>`;
+        return;
+    }
+
     const sorted = [...state.diary].sort((a,b) => new Date(b.date) - new Date(a.date));
-    
+
     sorted.forEach(entry => {
         const li = document.createElement('li');
         li.innerHTML = `<div class="journal-date">${escapeHtml(entry.date)}</div> <div class="journal-title">${escapeHtml(entry.title)}</div> <div class="journal-text">${escapeHtml(entry.text)}</div>`;
@@ -469,6 +520,8 @@ function escapeHtml(str){
     div.textContent = str ?? '';
     return div.innerHTML;
 }
+
+window.refreshJournalForAuthState = refreshJournalForAuthState;
 
 /* ---------------------------------------------------------
 Force-directed node graph (D3 v7)
@@ -664,6 +717,25 @@ adds a star and quickens the pace, and the response window
 shrinks as the level climbs — one wrong node under the
 pointer, or a stalled response, ends the round.
 --------------------------------------------------------- */
+/* Keeps the game FAB visible only on the main graph view, and hides it
+   whenever any popup/panel is open (content panel, account panel,
+   game modal itself, oracle terminal, nav) — it's a graph-page feature,
+   not a global one, and shouldn't float over unrelated screens. */
+function updateGameFabVisibility(){
+    const fab = document.getElementById('gameToggle');
+    if (!fab) return;
+
+    const onMainPage = !window.location.hash;
+    const anyOverlayOpen = [
+        'contentPanel', 'accountPanel', 'gameModal', 'oraclePanel', 'navPanel'
+    ].some(id => {
+        const el = document.getElementById(id);
+        return el && (el.classList.contains('show') || el.classList.contains('open'));
+    });
+
+    fab.hidden = !onMainPage || anyOverlayOpen;
+}
+
 function initGame(){
     const fab = document.getElementById('gameToggle');
     const modal = document.getElementById('gameModal');
@@ -688,6 +760,18 @@ function initGame(){
     if(hs) hs.textContent = gameState.highScore;
 
     initDrawing();
+
+    // Track every overlay this site opens/closes so the fab's visibility
+    // stays correct without having to thread calls through each handler.
+    const watchedIds = ['contentPanel', 'accountPanel', 'gameModal', 'oraclePanel', 'navPanel'];
+    watchedIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const observer = new MutationObserver(updateGameFabVisibility);
+        observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+    window.addEventListener('hashchange', updateGameFabVisibility);
+    updateGameFabVisibility();
 }
 
 function openGameModal(){
@@ -1028,6 +1112,7 @@ function handleRoute() {
     } else {
         showGraphView();
     }
+    updateGameFabVisibility();
 }
 function nextRound(){
     // clear the previous round's drawing before showing the new pattern

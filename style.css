@@ -327,6 +327,7 @@ body.has-announcement .scene { top: 34px; }
    (absolute + translate so it's independent of brand/menu widths),
    menu toggle pinned to the right */
 .brand { flex: 0 0 auto; }
+.account-topbar-btn { flex: 0 0 auto; }
 .player {
   position: absolute;
   left: 50%;
@@ -377,6 +378,39 @@ body.has-announcement .scene { top: 34px; }
   border-radius: 5px;
   flex-shrink: 0;
   box-shadow: 0 0 10px rgba(157,140,255,0.35);
+}
+
+/* Account/login icon — sits in the topbar, left of the brand mark on
+   desktop. Kept as a topbar sibling (not nested inside .brand) so it
+   stays visible even when .brand itself is hidden on small screens. */
+.account-topbar-btn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(18,26,38,0.78);
+  border: 1px solid var(--line);
+  color: var(--ochre);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 14px;
+  backdrop-filter: blur(8px);
+  transition: transform .25s ease, border-color .25s ease, background .25s ease;
+}
+.account-topbar-btn:hover {
+  border-color: var(--ochre);
+  background: var(--bg-2);
+  transform: translateY(-1px) scale(1.05);
+}
+.account-topbar-btn .account-fab-icon { width: 19px; height: 19px; }
+.account-topbar-btn .account-dot {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--terra, #ff6f6f);
+  box-shadow: 0 0 6px 1px rgba(255,111,111,0.7);
 }
 
 /* Audio Player - Museum Guide / Hi-Fi aesthetic */
@@ -592,6 +626,17 @@ body.has-announcement .scene { top: 34px; }
 
   .brand { display: none; }
 
+  .account-topbar-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+    width: 34px;
+    height: 34px;
+    margin-right: 0;
+  }
+  .account-topbar-btn .account-fab-icon { width: 17px; height: 17px; }
+
   .menu-toggle {
     position: absolute;
     top: 10px;
@@ -609,7 +654,7 @@ body.has-announcement .scene { top: 34px; }
     border-radius: 0;
     border: none;
     box-shadow: none;
-    padding: 10px 56px 10px 14px;
+    padding: 10px 56px 10px 56px;
   }
 
   .player-row {
@@ -852,6 +897,16 @@ body.has-announcement .scene { top: 34px; }
   margin: 4px 0 6px; text-transform: none; font-weight: 600;
 }
 .journal-text { font-family: var(--body); font-size: 13px; color: var(--ink-1); line-height: 1.6; font-style: italic; }
+
+.journal-locked {
+  border-left: 1px dashed var(--line) !important;
+  padding: 0 0 10px 16px !important;
+}
+.journal-locked-text {
+  font-family: var(--body); font-size: 12.5px; color: var(--ink-2);
+  font-style: italic; letter-spacing: .01em;
+}
+
 @media (max-width:900px){ .journal-log{ display:none; } }
 
 /* ---------------------------------------------------------
@@ -983,6 +1038,7 @@ Constellation Draw — game
   backdrop-filter: blur(8px);
   transition: transform .25s ease, border-color .25s ease, background .25s ease;
 }
+.game-fab[hidden] { display: none; }
 .game-fab:hover {
   border-color: var(--gold);
   background: var(--bg-2);
@@ -1046,38 +1102,6 @@ Constellation Draw — game
 /* ---------------------------------------------------------
 Account / login / encrypted chat
 --------------------------------------------------------- */
-.account-fab {
-  position: fixed;
-  left: 24px;
-  bottom: 24px;
-  z-index: 250;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  background: rgba(18,26,38,0.78);
-  border: 1px solid var(--line);
-  color: var(--iris, var(--ochre));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  backdrop-filter: blur(8px);
-  transition: transform .25s ease, border-color .25s ease, background .25s ease;
-}
-.account-fab:hover {
-  border-color: var(--ochre);
-  background: var(--bg-2);
-  transform: translateY(-2px) scale(1.06);
-}
-.account-fab-icon { width: 22px; height: 22px; }
-.account-dot {
-  position: absolute;
-  top: 8px; right: 8px;
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  background: var(--terra, #ff6f6f);
-  box-shadow: 0 0 6px 1px rgba(255,111,111,0.7);
-}
 
 .account-panel.content-panel {
   width: min(460px, 94vw);
@@ -1321,11 +1345,6 @@ Account / login / encrypted chat
   .chat-line { max-width: 90%; }
   .account-view-head--row { flex-direction: column; align-items: stretch; }
   .account-logout { align-self: flex-start; }
-}
-
-@media (max-width: 768px) {
-  .account-fab { left: 14px; bottom: 14px; width: 46px; height: 46px; }
-  .account-fab-icon { width: 19px; height: 19px; }
 }
 
 /* ---------------------------------------------------------

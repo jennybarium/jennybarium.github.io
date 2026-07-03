@@ -211,6 +211,10 @@ function refreshAccountView(){
         loggedOut.hidden = false;
         loggedIn.hidden = true;
     }
+
+    // the diary is login-gated site-wide, not just inside this panel —
+    // keep it in sync with whatever just happened (login, register, logout)
+    if (window.refreshJournalForAuthState) window.refreshJournalForAuthState();
 }
 
 /* Loads the visible user list once per panel-open (cheap, already-
