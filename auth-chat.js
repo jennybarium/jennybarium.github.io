@@ -273,8 +273,41 @@ function sendVisitBeacon() {
   } catch (e) { /* analytics failures should never break the site */ }
 }
 
+/* ---------------------------------------------------------------- */
+/* Site config — Worker-driven announcement banner / maintenance     */
+/* mode / feature flags. Cached briefly client-side so it's cheap    */
+/* to call on every load without slowing the page down.              */
+/* ---------------------------------------------------------------- */
+
+const SiteConfig = {
+  _cache: null,
+  _cachedAt: 0,
+  DEFAULTS: {
+    announcement: null,
+    maintenanceMode: false,
+    features: { chat: true, game: true, oracle: true },
+  },
+
+  async load({ force = false } = {}) {
+    if (!force && this._cache && Date.now() - this._cachedAt < 60000) return this._cache;
+    try {
+      const res = await fetch(`${API_BASE}/api/config`);
+      if (!res.ok) throw new Error('config fetch failed');
+      const data = await res.json();
+      this._cache = { ...this.DEFAULTS, ...data };
+    } catch (e) {
+      // Worker unreachable or config missing — fail open with safe defaults
+      // rather than breaking the whole site.
+      this._cache = this.DEFAULTS;
+    }
+    this._cachedAt = Date.now();
+    return this._cache;
+  },
+};
+
 // Export to global scope for use by script.js / inline handlers.
 window.Auth = Auth;
 window.Chat = Chat;
+window.SiteConfig = SiteConfig;
 window.fetchPrivateContent = fetchPrivateContent;
 window.sendVisitBeacon = sendVisitBeacon;

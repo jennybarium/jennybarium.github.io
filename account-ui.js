@@ -8,6 +8,8 @@
 let chatPollTimer = null;
 let lastMessageTs = 0;
 const seenMessageKeys = new Set();
+let knownUsers = new Set();
+let knownUsersLoadedAt = 0;
 
 function initAccountPanel(){
     const toggle = document.getElementById('accountToggle');
@@ -72,8 +74,10 @@ function wireForms(){
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         errorEl.hidden = true;
+        const btn = loginForm.querySelector('button[type="submit"]');
         const username = document.getElementById('loginUsername').value.trim().toLowerCase();
         const password = document.getElementById('loginPassword').value;
+        setBtnLoading(btn, true);
         try {
             await window.Auth.login(username, password);
             loginForm.reset();
@@ -82,14 +86,18 @@ function wireForms(){
         } catch (err) {
             errorEl.textContent = err.message;
             errorEl.hidden = false;
+        } finally {
+            setBtnLoading(btn, false);
         }
     });
 
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         errorEl.hidden = true;
+        const btn = registerForm.querySelector('button[type="submit"]');
         const username = document.getElementById('registerUsername').value.trim().toLowerCase();
         const password = document.getElementById('registerPassword').value;
+        setBtnLoading(btn, true);
         try {
             await window.Auth.register(username, password);
             // auto-login right after registering
@@ -100,6 +108,8 @@ function wireForms(){
         } catch (err) {
             errorEl.textContent = err.message;
             errorEl.hidden = false;
+        } finally {
+            setBtnLoading(btn, false);
         }
     });
 
@@ -109,7 +119,8 @@ function wireForms(){
         refreshAccountView();
     });
 
-    document.getElementById('chatSendBtn').addEventListener('click', async () => {
+    const sendBtn = document.getElementById('chatSendBtn');
+    sendBtn.addEventListener('click', async () => {
         const toEl = document.getElementById('chatTo');
         const textEl = document.getElementById('chatText');
         const chatError = document.getElementById('chatError');
@@ -119,6 +130,7 @@ function wireForms(){
         const text = textEl.value.trim();
         if (!to || !text) return;
 
+        setBtnLoading(sendBtn, true);
         try {
             await window.Chat.send(to, text);
             appendChatLine({ from: window.Auth.getUsername(), text, ts: Date.now() }, true);
@@ -126,8 +138,60 @@ function wireForms(){
         } catch (err) {
             chatError.textContent = err.message;
             chatError.hidden = false;
+        } finally {
+            setBtnLoading(sendBtn, false);
         }
     });
+
+    wireRecipientCheck();
+}
+
+/* Live ✅ / ❌ next to the "to" field, checked against the already-loaded
+   user list (no per-keystroke network call). Debounced lightly so rapid
+   typing doesn't flicker the indicator. */
+function wireRecipientCheck(){
+    const toEl = document.getElementById('chatTo');
+    const statusEl = document.getElementById('chatToStatus');
+    if (!toEl || !statusEl) return;
+
+    let debounceTimer = null;
+
+    function evaluate(){
+        const val = toEl.value.trim().toLowerCase();
+        if (!val) {
+            statusEl.classList.remove('is-visible');
+            statusEl.textContent = '';
+            statusEl.removeAttribute('data-state');
+            return;
+        }
+        if (val === window.Auth.getUsername()) {
+            statusEl.dataset.state = 'bad';
+            statusEl.textContent = '❌';
+            statusEl.title = "That's you";
+            statusEl.classList.add('is-visible');
+            return;
+        }
+        const exists = knownUsers.has(val);
+        statusEl.dataset.state = exists ? 'ok' : 'bad';
+        statusEl.textContent = exists ? '✅' : '❌';
+        statusEl.title = exists ? 'User found' : 'No user with that id (among visible users)';
+        statusEl.classList.add('is-visible');
+    }
+
+    toEl.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(evaluate, 120);
+    });
+    toEl.addEventListener('blur', evaluate);
+}
+
+function setBtnLoading(btn, loading){
+    if (!btn) return;
+    const label = btn.querySelector('.btn-label');
+    const spinner = btn.querySelector('.btn-spinner');
+    btn.disabled = loading;
+    if (spinner) spinner.hidden = !loading;
+    if (label) label.style.opacity = loading ? '0.6' : '1';
 }
 
 function refreshAccountView(){
@@ -141,9 +205,50 @@ function refreshAccountView(){
         document.getElementById('chatLog').innerHTML = '';
         seenMessageKeys.clear();
         pollOnce(); // immediate refresh when opening
+        refreshKnownUsers();
+        renderChatLogEmptyState();
     } else {
         loggedOut.hidden = false;
         loggedIn.hidden = true;
+    }
+}
+
+/* Loads the visible user list once per panel-open (cheap, already-
+   authenticated endpoint) so the "to" field can show a live ✅ / ❌
+   without hitting the network on every keystroke. */
+async function refreshKnownUsers(){
+    if (!window.Auth.isLoggedIn()) return;
+    try {
+        const users = await window.Chat.listUsers();
+        knownUsers = new Set(users);
+        knownUsersLoadedAt = Date.now();
+        const datalist = document.getElementById('knownUsersList');
+        if (datalist) {
+            datalist.innerHTML = '';
+            users.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u;
+                datalist.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        // silent — the exists-check just degrades to "unknown" state
+    }
+}
+
+function renderChatLogEmptyState(){
+    const log = document.getElementById('chatLog');
+    const tag = document.getElementById('chatLogEmpty');
+    if (!log || !tag) return;
+    const hasMessages = log.querySelector('.chat-line') !== null;
+    tag.hidden = hasMessages;
+}
+
+function formatMsgTime(ts){
+    try {
+        return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+        return '';
     }
 }
 
@@ -163,10 +268,17 @@ function appendChatLine(msg, isOutgoing){
     const body = document.createElement('span');
     body.className = 'chat-text';
     body.textContent = msg.text;
+    const meta = document.createElement('span');
+    meta.className = 'chat-meta';
+    meta.textContent = formatMsgTime(msg.ts);
+
     li.appendChild(who);
     li.appendChild(body);
+    li.appendChild(meta);
     log.appendChild(li);
     log.scrollTop = log.scrollHeight;
+
+    renderChatLogEmptyState();
 }
 
 async function pollOnce(){
@@ -202,7 +314,55 @@ function updateAccountDot(){
     toggle.addEventListener('click', () => { dot.hidden = true; });
 }
 
+/* Applies Worker-driven site config: shows/hides the announcement
+   banner and, if maintenanceMode is on, disables the account panel's
+   forms rather than pretending the backend still works. Fails open
+   (site behaves normally) if the config fetch itself fails. */
+async function applySiteConfig(){
+    if (!window.SiteConfig) return;
+    const config = await window.SiteConfig.load();
+
+    const banner = document.getElementById('announcementBanner');
+    const textEl = document.getElementById('announcementText');
+    const closeBtn = document.getElementById('announcementClose');
+    if (banner && textEl) {
+        if (config.announcement && config.announcement.text) {
+            const dismissedKey = `dismissed_announcement:${config.announcement.text}`;
+            if (!sessionStorage.getItem(dismissedKey)) {
+                textEl.textContent = config.announcement.text;
+                banner.dataset.tone = config.announcement.tone || 'info';
+                banner.hidden = false;
+                document.body.classList.add('has-announcement');
+                closeBtn.onclick = () => {
+                    banner.hidden = true;
+                    document.body.classList.remove('has-announcement');
+                    try { sessionStorage.setItem(dismissedKey, '1'); } catch (e) { /* ignore */ }
+                };
+            }
+        } else {
+            banner.hidden = true;
+            document.body.classList.remove('has-announcement');
+        }
+    }
+
+    if (config.maintenanceMode) {
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const errorEl = document.getElementById('accountError');
+        [loginForm, registerForm].forEach(f => {
+            if (!f) return;
+            f.querySelectorAll('input, button').forEach(el => el.disabled = true);
+        });
+        if (errorEl) {
+            errorEl.textContent = 'Accounts and messaging are temporarily offline for maintenance — please check back soon.';
+            errorEl.hidden = false;
+        }
+        stopPolling();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initAccountPanel();
+    applySiteConfig();
     window.sendVisitBeacon && window.sendVisitBeacon();
 });

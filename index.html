@@ -17,6 +17,12 @@
 <!-- aurora borealis background scene: stars, hill silhouette, moon, drifting lights -->
 <div class="scene" id="auroraScene" aria-hidden="true"></div>
 
+<!-- announcement banner, populated from Worker-driven site config -->
+<div id="announcementBanner" class="announcement-banner" hidden role="status">
+  <span id="announcementText"></span>
+  <button id="announcementClose" class="announcement-close" aria-label="Dismiss announcement">✕</button>
+</div>
+
 <!-- top bar -->
 <header class="topbar">
   <div class="brand">
@@ -136,55 +142,88 @@
 
 <!-- account panel: login / register -->
 <section id="accountPanel" class="content-panel account-panel" aria-hidden="true" role="dialog" aria-label="Account">
-  <div class="content-panel-inner">
+  <div class="content-panel-inner account-panel-inner">
     <button id="closeAccount" class="close-btn" aria-label="Close">✕</button>
 
     <div id="loggedOutView" class="account-view">
-      <div class="content-eyebrow">// visitor access</div>
-      <h2>Sign in</h2>
-      <p class="game-desc">Log in to message other signed-in visitors, end-to-end encrypted — this site's server never has the keys to read them.</p>
+      <div class="account-view-head">
+        <div class="content-eyebrow">// visitor access</div>
+        <h2>Sign in</h2>
+        <p class="game-desc">Log in to message other signed-in visitors, end-to-end encrypted — this site's server never has the keys to read them.</p>
+      </div>
 
       <form id="loginForm" class="account-form">
-        <label class="account-label" for="loginUsername">username</label>
-        <input id="loginUsername" class="account-input" type="text" autocomplete="username" required>
-        <label class="account-label" for="loginPassword">password</label>
-        <input id="loginPassword" class="account-input" type="password" autocomplete="current-password" required>
-        <button type="submit" class="game-btn">Log in</button>
+        <div class="account-field">
+          <label class="account-label" for="loginUsername">Username</label>
+          <input id="loginUsername" class="account-input" type="text" autocomplete="username" required>
+        </div>
+        <div class="account-field">
+          <label class="account-label" for="loginPassword">Password</label>
+          <input id="loginPassword" class="account-input" type="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="game-btn account-btn-block">
+          <span class="btn-label">Log in</span>
+          <span class="btn-spinner" hidden></span>
+        </button>
       </form>
 
       <p class="account-switch">No account yet? <button id="showRegister" class="account-link">Register</button></p>
 
       <form id="registerForm" class="account-form" hidden>
-        <label class="account-label" for="registerUsername">choose a username</label>
-        <input id="registerUsername" class="account-input" type="text" autocomplete="username" pattern="[a-z0-9_]{3,24}" required placeholder="lowercase, digits, underscore">
-        <label class="account-label" for="registerPassword">choose a password</label>
-        <input id="registerPassword" class="account-input" type="password" autocomplete="new-password" minlength="8" required placeholder="8+ characters">
-        <button type="submit" class="game-btn">Create account</button>
+        <div class="account-field">
+          <label class="account-label" for="registerUsername">Choose a username</label>
+          <input id="registerUsername" class="account-input" type="text" autocomplete="username" pattern="[a-z0-9_]{3,24}" required placeholder="lowercase, digits, underscore">
+        </div>
+        <div class="account-field">
+          <label class="account-label" for="registerPassword">Choose a password</label>
+          <input id="registerPassword" class="account-input" type="password" autocomplete="new-password" minlength="8" required placeholder="8+ characters">
+        </div>
+        <button type="submit" class="game-btn account-btn-block">
+          <span class="btn-label">Create account</span>
+          <span class="btn-spinner" hidden></span>
+        </button>
       </form>
       <p class="account-switch" id="showLoginWrap" hidden>Already registered? <button id="showLogin" class="account-link">Log in</button></p>
 
-      <p id="accountError" class="game-warning hint" hidden></p>
+      <p id="accountError" class="account-alert" hidden></p>
     </div>
 
     <div id="loggedInView" class="account-view" hidden>
-      <div class="content-eyebrow">// signed in as <span id="whoami"></span></div>
-      <h2>Messages</h2>
+      <div class="account-view-head account-view-head--row">
+        <div>
+          <div class="content-eyebrow">// signed in as <span id="whoami"></span></div>
+          <h2>Messages</h2>
+        </div>
+        <button id="logoutBtn" class="account-link account-logout">Log out</button>
+      </div>
 
       <div class="chat-compose">
-        <label class="account-label" for="chatTo">to (username)</label>
-        <input id="chatTo" class="account-input" type="text" placeholder="their username">
-        <label class="account-label" for="chatText">message</label>
-        <textarea id="chatText" class="account-input chat-textarea" rows="3" placeholder="encrypted before it leaves your browser"></textarea>
-        <button id="chatSendBtn" class="game-btn">Send, encrypted</button>
-        <p id="chatError" class="game-warning hint" hidden></p>
+        <div class="account-field">
+          <label class="account-label" for="chatTo">To</label>
+          <div class="chat-to-wrap">
+            <input id="chatTo" class="account-input" type="text" placeholder="their username" autocomplete="off" list="knownUsersList">
+            <span id="chatToStatus" class="chat-to-status" aria-live="polite"></span>
+          </div>
+          <datalist id="knownUsersList"></datalist>
+        </div>
+        <div class="account-field">
+          <label class="account-label" for="chatText">Message</label>
+          <textarea id="chatText" class="account-input chat-textarea" rows="3" placeholder="Encrypted before it leaves your browser…"></textarea>
+        </div>
+        <button id="chatSendBtn" class="game-btn account-btn-block">
+          <span class="btn-label">Send, encrypted</span>
+          <span class="btn-spinner" hidden></span>
+        </button>
+        <p id="chatError" class="account-alert" hidden></p>
       </div>
 
       <div class="chat-log-wrap">
-        <div class="content-eyebrow">// inbox</div>
+        <div class="content-eyebrow chat-log-head">
+          <span>// inbox</span>
+          <span id="chatLogEmpty" class="chat-log-empty-tag" hidden>nothing yet</span>
+        </div>
         <ul id="chatLog" class="chat-log"></ul>
       </div>
-
-      <button id="logoutBtn" class="account-link account-logout">Log out</button>
     </div>
   </div>
 </section>

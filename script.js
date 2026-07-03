@@ -180,6 +180,57 @@ function initAuroraScene(){
     frag.appendChild(lights);
 
     scene.appendChild(frag);
+
+    initMeteors(scene);
+}
+
+/* ---------------------------------------------------------
+Meteors — spawns colorful streaks at random angles, positions,
+speeds and hues on a loose interval. Each meteor removes itself
+from the DOM once its animation finishes, so this never leaks
+nodes. Respects prefers-reduced-motion.
+--------------------------------------------------------- */
+function initMeteors(scene){
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const HUE_CHOICES = [255, 330, 165, 40, 200, 20, 285];
+    const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+    function spawnMeteor(){
+        const meteor = document.createElement('div');
+        meteor.className = 'meteor';
+
+        const hue = HUE_CHOICES[Math.floor(Math.random() * HUE_CHOICES.length)];
+        const angle = randomInRange(15, 55) * (Math.random() < 0.5 ? 1 : -1); // random angle, either diagonal
+        const duration = randomInRange(0.9, 2.1);
+        const length = randomInRange(90, 200);
+        const travel = randomInRange(140, 320);
+
+        meteor.style.setProperty('--mhue', hue);
+        meteor.style.setProperty('--mangle', angle.toFixed(1));
+        meteor.style.setProperty('--mduration', duration.toFixed(2));
+        meteor.style.setProperty('--mlen', length.toFixed(0));
+        meteor.style.setProperty('--mtravel', travel.toFixed(0));
+        meteor.style.setProperty('--mx', randomInRange(0, 85).toFixed(1));
+        meteor.style.setProperty('--my', randomInRange(0, 55).toFixed(1));
+
+        meteor.addEventListener('animationend', () => meteor.remove());
+        scene.appendChild(meteor);
+    }
+
+    function scheduleNext(){
+        // occasional, irregular timing so it feels natural rather than metronomic
+        const delay = randomInRange(1800, 5200);
+        setTimeout(() => {
+            spawnMeteor();
+            // small chance of a quick double-streak
+            if (Math.random() < 0.18) setTimeout(spawnMeteor, randomInRange(150, 500));
+            scheduleNext();
+        }, delay);
+    }
+
+    spawnMeteor();
+    scheduleNext();
 }
 
 async function loadJSON(path, fallback){
