@@ -194,6 +194,17 @@ function setBtnLoading(btn, loading){
     if (label) label.style.opacity = loading ? '0.6' : '1';
 }
 
+function resetAccountSubView(){
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const showLoginWrap = document.getElementById('showLoginWrap');
+    const accountSwitch = loginForm ? loginForm.nextElementSibling : null;
+    if (loginForm) loginForm.hidden = false;
+    if (registerForm) registerForm.hidden = true;
+    if (showLoginWrap) showLoginWrap.hidden = true;
+    if (accountSwitch) accountSwitch.hidden = false;
+}
+
 function refreshAccountView(){
     const loggedOut = document.getElementById('loggedOutView');
     const loggedIn = document.getElementById('loggedInView');
@@ -201,6 +212,10 @@ function refreshAccountView(){
     if (window.Auth.isLoggedIn()) {
         loggedOut.hidden = true;
         loggedIn.hidden = false;
+        // Always reset the login/register sub-view so nothing stale is
+        // left open underneath the next time loggedOutView is shown
+        // again (e.g. after logging out).
+        resetAccountSubView();
         document.getElementById('whoami').textContent = window.Auth.getUsername();
         document.getElementById('chatLog').innerHTML = '';
         seenMessageKeys.clear();
@@ -210,6 +225,7 @@ function refreshAccountView(){
     } else {
         loggedOut.hidden = false;
         loggedIn.hidden = true;
+        resetAccountSubView();
     }
 
     // the diary is login-gated site-wide, not just inside this panel —

@@ -55,9 +55,12 @@
           <span class="mode-icon mode-icon--radio" aria-hidden="true">📡</span>
         </button>
         <select id="sourceSelect" class="player-source" aria-label="Audio source"></select>
+        <button id="sourcePickerBtn" class="player-source-mobile-btn" aria-label="Choose track or station" aria-haspopup="listbox" aria-expanded="false">☰</button>
         <input id="volume" class="player-volume" type="range" min="0" max="1" step="0.01" value="0.6" aria-label="Volume">
       </div>
     </div>
+    <div id="sourcePickerPopup" class="source-picker-popup" hidden role="listbox" aria-label="Choose track or station"></div>
+    <div id="sourcePickerScrim" class="source-picker-scrim" hidden></div>
     <div class="player-bar" id="progressBar">
       <div class="player-bar-buffered" id="trackBuffered"></div>
       <div class="player-bar-fill" id="trackProgress"></div>
@@ -116,9 +119,7 @@
   <ul id="journalList" class="journal-list"></ul>
 </aside>
 
-<footer class="site-privacy-note">
-  <a href="#" id="privacyNoteLink">This site logs aggregate visit stats (country, referrer, device type — no names, no IPs stored). Messages between signed-in users are end-to-end encrypted; this site cannot read them.</a>
-</footer>
+
 
 <div class="oracle-wrap">
   <button id="oracleToggle" class="oracle-trigger" aria-haspopup="dialog" aria-expanded="false" aria-controls="oraclePanel">

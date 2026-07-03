@@ -486,10 +486,11 @@ body.has-announcement .scene { top: 34px; }
   font-size: 11px;
   letter-spacing: 0.03em;
   color: var(--ink-1);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
   font-family: var(--body);
+  line-height: 1.35;
 }
 
 .player-title.is-buffering::after {
@@ -538,6 +539,20 @@ body.has-announcement .scene { top: 34px; }
   color: var(--ink-2);
   letter-spacing: 0.03em;
   font-family: var(--body);
+}
+
+/* Radio mode: no meaningful elapsed time, so hide the 0:00 readout and
+   the (non-functional) progress bar, and highlight the LIVE indicator. */
+.player.is-radio-mode .player-bar,
+.player.is-radio-mode #timeCurrent {
+  display: none;
+}
+.player.is-radio-mode .player-times {
+  justify-content: flex-end;
+}
+.player.is-radio-mode #timeDuration {
+  color: var(--terra);
+  font-weight: 700;
 }
 
 .player-extras {
@@ -615,6 +630,80 @@ body.has-announcement .scene { top: 34px; }
   cursor: pointer;
 }
 
+/* Mobile source picker — hidden on desktop, where the native <select>
+   dropdown already works fine. */
+.player-source-mobile-btn {
+  display: none;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-1);
+  font-size: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s;
+}
+.player-source-mobile-btn:hover,
+.player-source-mobile-btn:active {
+  background: rgba(157, 140, 255, 0.12);
+  border-color: var(--ochre);
+  color: var(--ochre);
+}
+
+.source-picker-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(6,8,14,0.65);
+  backdrop-filter: blur(4px);
+}
+.source-picker-scrim[hidden] { display: none; }
+
+.source-picker-popup {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 501;
+  width: min(420px, 100vw);
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+  padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+}
+.source-picker-popup[hidden] { display: none; }
+
+.source-picker-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-1);
+  font-family: var(--body);
+  font-size: 14px;
+  padding: 13px 20px;
+}
+.source-picker-item:last-child { border-bottom: none; }
+.source-picker-item:hover,
+.source-picker-item:active {
+  background: rgba(157, 140, 255, 0.1);
+  color: var(--ink-0);
+}
+.source-picker-item[aria-selected="true"] {
+  color: var(--ochre);
+  font-weight: 600;
+}
+
 /* Mobile: dedicated compact media bar, replaces the topbar entirely on small screens */
 @media (max-width: 768px) {
   .topbar {
@@ -668,7 +757,11 @@ body.has-announcement .scene { top: 34px; }
   }
 
   .player-source {
-    display: none; /* dropdown hidden on phones — use prev/next instead to keep it clean */
+    display: none; /* native dropdown is unusable on phones — replaced by the popup button */
+  }
+
+  .player-source-mobile-btn {
+    display: flex; /* opens the mobile track/station picker popup */
   }
 
   .player-volume {

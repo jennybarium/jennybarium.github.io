@@ -1398,6 +1398,10 @@ async function initPlayer() {
   const volume = document.getElementById('volume');
   const title = document.getElementById('trackTitle');
   const sourceSelect = document.getElementById('sourceSelect');
+  const sourcePickerBtn = document.getElementById('sourcePickerBtn');
+  const sourcePickerPopup = document.getElementById('sourcePickerPopup');
+  const sourcePickerScrim = document.getElementById('sourcePickerScrim');
+  const playerEl = document.getElementById('player');
 
   audio.volume = parseFloat(volume.value);
   let library = { music: [], radio: [] };
@@ -1431,15 +1435,50 @@ async function initPlayer() {
       opt.textContent = item.title || 'Unknown Track';
       sourceSelect.appendChild(opt);
     });
+    renderSourcePickerPopup();
+  }
+
+  function renderSourcePickerPopup() {
+    if (!sourcePickerPopup) return;
+    sourcePickerPopup.innerHTML = '';
+    currentList().forEach((item, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'source-picker-item';
+      btn.setAttribute('role', 'option');
+      btn.setAttribute('aria-selected', i === index ? 'true' : 'false');
+      btn.textContent = item.title || 'Unknown Track';
+      btn.addEventListener('click', () => {
+        loadTrack(i, true);
+        closeSourcePicker();
+      });
+      sourcePickerPopup.appendChild(btn);
+    });
+  }
+
+  function openSourcePicker() {
+    if (!sourcePickerPopup || !currentList().length) return;
+    renderSourcePickerPopup();
+    sourcePickerPopup.hidden = false;
+    sourcePickerScrim.hidden = false;
+    sourcePickerBtn.setAttribute('aria-expanded', 'true');
+  }
+  function closeSourcePicker() {
+    if (!sourcePickerPopup) return;
+    sourcePickerPopup.hidden = true;
+    sourcePickerScrim.hidden = true;
+    sourcePickerBtn.setAttribute('aria-expanded', 'false');
   }
 
   function setMode(newMode, autoplay) {
     mode = newMode;
+    if (playerEl) playerEl.classList.toggle('is-radio-mode', mode === 'radio');
     modeToggle.classList.toggle('is-radio', mode === 'radio');
     modeToggle.setAttribute('aria-checked', mode === 'radio' ? 'true' : 'false');
     modeToggle.setAttribute('aria-label', mode === 'radio' ? 'Switch to music' : 'Switch to radio');
 
     [prevBtn, nextBtn, shuffleBtn].forEach(b => b.disabled = mode === 'radio');
+    closeSourcePicker();
     renderSourceSelect();
     audio.pause();
     playBtn.textContent = '▶';
@@ -1467,6 +1506,7 @@ async function initPlayer() {
     timeCurrent.textContent = '0:00';
     timeDuration.textContent = mode === 'radio' ? 'LIVE' : '0:00';
     progressBar.style.cursor = mode === 'radio' ? 'default' : 'pointer';
+    renderSourcePickerPopup();
 
     if (autoplay) {
       audio.play().catch((err) => {
@@ -1529,6 +1569,16 @@ async function initPlayer() {
   sourceSelect.addEventListener('change', () => {
     loadTrack(parseInt(sourceSelect.value, 10), true);
   });
+
+  if (sourcePickerBtn) {
+    sourcePickerBtn.addEventListener('click', () => {
+      if (sourcePickerPopup.hidden) openSourcePicker();
+      else closeSourcePicker();
+    });
+  }
+  if (sourcePickerScrim) {
+    sourcePickerScrim.addEventListener('click', closeSourcePicker);
+  }
 
   audio.addEventListener('timeupdate', () => {
     if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
