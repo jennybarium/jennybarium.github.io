@@ -102,6 +102,10 @@
   <ul id="journalList" class="journal-list"></ul>
 </aside>
 
+<footer class="site-privacy-note">
+  <a href="#" id="privacyNoteLink">This site logs aggregate visit stats (country, referrer, device type — no names, no IPs stored). Messages between signed-in users are end-to-end encrypted; this site cannot read them.</a>
+</footer>
+
 <div class="oracle-wrap">
   <button id="oracleToggle" class="oracle-trigger" aria-haspopup="dialog" aria-expanded="false" aria-controls="oraclePanel">
     <span>curator@atelier:~$</span><span class="oracle-caret" aria-hidden="true">_</span>
@@ -120,6 +124,71 @@
     <input id="oracleInput" class="oracle-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Terminal command input">
   </div>
 </section>
+
+<!-- account: login / register / encrypted chat launcher -->
+<button id="accountToggle" class="account-fab" aria-label="Account & encrypted messages" aria-haspopup="dialog">
+  <svg class="account-fab-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M5 19.2c0-3.4 3.1-5.7 7-5.7s7 2.3 7 5.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>
+  <span id="accountDot" class="account-dot" hidden></span>
+</button>
+
+<!-- account panel: login / register -->
+<section id="accountPanel" class="content-panel account-panel" aria-hidden="true" role="dialog" aria-label="Account">
+  <div class="content-panel-inner">
+    <button id="closeAccount" class="close-btn" aria-label="Close">✕</button>
+
+    <div id="loggedOutView" class="account-view">
+      <div class="content-eyebrow">// visitor access</div>
+      <h2>Sign in</h2>
+      <p class="game-desc">Log in to message other signed-in visitors, end-to-end encrypted — this site's server never has the keys to read them.</p>
+
+      <form id="loginForm" class="account-form">
+        <label class="account-label" for="loginUsername">username</label>
+        <input id="loginUsername" class="account-input" type="text" autocomplete="username" required>
+        <label class="account-label" for="loginPassword">password</label>
+        <input id="loginPassword" class="account-input" type="password" autocomplete="current-password" required>
+        <button type="submit" class="game-btn">Log in</button>
+      </form>
+
+      <p class="account-switch">No account yet? <button id="showRegister" class="account-link">Register</button></p>
+
+      <form id="registerForm" class="account-form" hidden>
+        <label class="account-label" for="registerUsername">choose a username</label>
+        <input id="registerUsername" class="account-input" type="text" autocomplete="username" pattern="[a-z0-9_]{3,24}" required placeholder="lowercase, digits, underscore">
+        <label class="account-label" for="registerPassword">choose a password</label>
+        <input id="registerPassword" class="account-input" type="password" autocomplete="new-password" minlength="8" required placeholder="8+ characters">
+        <button type="submit" class="game-btn">Create account</button>
+      </form>
+      <p class="account-switch" id="showLoginWrap" hidden>Already registered? <button id="showLogin" class="account-link">Log in</button></p>
+
+      <p id="accountError" class="game-warning hint" hidden></p>
+    </div>
+
+    <div id="loggedInView" class="account-view" hidden>
+      <div class="content-eyebrow">// signed in as <span id="whoami"></span></div>
+      <h2>Messages</h2>
+
+      <div class="chat-compose">
+        <label class="account-label" for="chatTo">to (username)</label>
+        <input id="chatTo" class="account-input" type="text" placeholder="their username">
+        <label class="account-label" for="chatText">message</label>
+        <textarea id="chatText" class="account-input chat-textarea" rows="3" placeholder="encrypted before it leaves your browser"></textarea>
+        <button id="chatSendBtn" class="game-btn">Send, encrypted</button>
+        <p id="chatError" class="game-warning hint" hidden></p>
+      </div>
+
+      <div class="chat-log-wrap">
+        <div class="content-eyebrow">// inbox</div>
+        <ul id="chatLog" class="chat-log"></ul>
+      </div>
+
+      <button id="logoutBtn" class="account-link account-logout">Log out</button>
+    </div>
+  </div>
+</section>
+<div id="accountScrim" class="content-scrim"></div>
 
 <!-- constellation draw: game launcher -->
 <button id="gameToggle" class="game-fab" aria-label="Play the constellation game" aria-haspopup="dialog">
@@ -166,6 +235,8 @@
 </div>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="auth-chat.js"></script>
+<script src="account-ui.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
