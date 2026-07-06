@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>:: Account &amp; Messages — Bariumana</title>
+<meta name="description" content="Sign in to send end-to-end encrypted messages on Bariumana.">
+<link rel="icon" type="image/svg+xml" href="/flag.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/topic-page.css">
+<link rel="stylesheet" href="account-page.css">
+</head>
+<body class="topic-page-body">
+
+<header class="topic-header">
+  <a href="/" class="topic-header-brand">
+    <span class="brand-glyph">❧</span>
+    <span class="brand-text">Bariumana</span>
+  </a>
+</header>
+
+<main class="topic-page-main account-page-main">
+
+  <a href="/" class="back-to-main-link">← Back to the main page</a>
+
+  <div class="account-view-wrap">
+
+    <div id="loggedOutView" class="account-view">
+      <div class="account-view-head">
+        <div class="content-eyebrow">// visitor access</div>
+        <h1 class="topic-page-title" style="border-bottom:none;padding-bottom:0;">Sign in</h1>
+        <p class="game-desc">Log in to message other signed-in visitors, end-to-end encrypted — this site's server never has the keys to read them.</p>
+      </div>
+
+      <form id="loginForm" class="account-form">
+        <div class="account-field">
+          <label class="account-label" for="loginUsername">Username</label>
+          <input id="loginUsername" class="account-input" type="text" autocomplete="username" required>
+        </div>
+        <div class="account-field">
+          <label class="account-label" for="loginPassword">Password</label>
+          <input id="loginPassword" class="account-input" type="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="game-btn account-btn-block">
+          <span class="btn-label">Log in</span>
+          <span class="btn-spinner" hidden></span>
+        </button>
+      </form>
+
+      <p class="account-switch">No account yet? <button id="showRegister" class="account-link">Register</button></p>
+
+      <form id="registerForm" class="account-form" hidden>
+        <div class="account-field">
+          <label class="account-label" for="registerUsername">Choose a username</label>
+          <input id="registerUsername" class="account-input" type="text" autocomplete="username" pattern="[a-z0-9_]{3,24}" required placeholder="lowercase, digits, underscore">
+        </div>
+        <div class="account-field">
+          <label class="account-label" for="registerPassword">Choose a password</label>
+          <input id="registerPassword" class="account-input" type="password" autocomplete="new-password" minlength="8" required placeholder="8+ characters">
+        </div>
+        <button type="submit" class="game-btn account-btn-block">
+          <span class="btn-label">Create account</span>
+          <span class="btn-spinner" hidden></span>
+        </button>
+      </form>
+      <p class="account-switch" id="showLoginWrap" hidden>Already registered? <button id="showLogin" class="account-link">Log in</button></p>
+
+      <p id="accountError" class="account-alert" hidden></p>
+    </div>
+
+    <div id="loggedInView" class="account-view" hidden>
+      <div class="account-view-head account-view-head--row">
+        <div>
+          <div class="content-eyebrow">// signed in as <span id="whoami"></span></div>
+          <h1 class="topic-page-title" style="border-bottom:none;padding-bottom:0;">Messages</h1>
+        </div>
+        <button id="logoutBtn" class="account-link account-logout">Log out</button>
+      </div>
+
+      <div class="chat-compose">
+        <div class="account-field">
+          <label class="account-label" for="chatTo">To</label>
+          <div class="chat-to-wrap">
+            <input id="chatTo" class="account-input" type="text" placeholder="their username" autocomplete="off" list="knownUsersList">
+            <span id="chatToStatus" class="chat-to-status" aria-live="polite"></span>
+          </div>
+          <datalist id="knownUsersList"></datalist>
+        </div>
+        <div class="account-field">
+          <label class="account-label" for="chatText">Message</label>
+          <textarea id="chatText" class="account-input chat-textarea" rows="3" placeholder="Encrypted before it leaves your browser…"></textarea>
+        </div>
+        <button id="chatSendBtn" class="game-btn account-btn-block">
+          <span class="btn-label">Send, encrypted</span>
+          <span class="btn-spinner" hidden></span>
+        </button>
+        <p id="chatError" class="account-alert" hidden></p>
+      </div>
+
+      <div class="chat-log-wrap">
+        <div class="content-eyebrow chat-log-head">
+          <span>// inbox</span>
+          <span id="chatLogEmpty" class="chat-log-empty-tag" hidden>nothing yet</span>
+        </div>
+        <ul id="chatLog" class="chat-log"></ul>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="/auth-chat.js" defer></script>
+<script src="account-page.js" defer></script>
+</body>
+</html>

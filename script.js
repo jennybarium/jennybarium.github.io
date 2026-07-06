@@ -14,7 +14,6 @@ const CATEGORY_COLORS = {
 const state = {
     topics: [],
     diary: [],
-    media: {},
 };
 
 /* Shared reference to the live graph — the game reads/writes this */
@@ -70,7 +69,6 @@ function wireTelegramBackButton(tg){
 
     function anyOverlayOpen(){
         return document.getElementById('navPanel')?.classList.contains('open')
-            || document.getElementById('contentPanel')?.classList.contains('show')
             || document.getElementById('gameModal')?.classList.contains('show')
             || document.getElementById('oraclePanel')?.classList.contains('show');
     }
@@ -85,14 +83,13 @@ function wireTelegramBackButton(tg){
     tg.BackButton.onClick(() => {
         if(document.getElementById('navPanel')?.classList.contains('open') && window._closeMenu) window._closeMenu();
         else if(document.getElementById('gameModal')?.classList.contains('show')) closeGameModal();
-        else if(document.getElementById('contentPanel')?.classList.contains('show') && window._closeContentPanel) window._closeContentPanel();
         else if(document.getElementById('oraclePanel')?.classList.contains('show') && window._closeOracle) window._closeOracle();
         syncBackButton();
     });
 
     // Re-check whenever the DOM changes state on the panels we care about
     const observer = new MutationObserver(syncBackButton);
-    ['navPanel','contentPanel','gameModal','oraclePanel'].forEach(id => {
+    ['navPanel','gameModal','oraclePanel'].forEach(id => {
         const el = document.getElementById(id);
         if(el) observer.observe(el, { attributes: true, attributeFilter: ['class'] });
     });
@@ -106,12 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const tg = initTelegram();
     initAuroraScene();
     initMenu();
-    initContentPanel();
+    initNodeTooltip();
     initGame();
     initOracle();
     initPlayer();
     loadData();
     wireTelegramBackButton(tg);
+    window.sendVisitBeacon && window.sendVisitBeacon();
 });
 
 /* ---------------------------------------------------------
@@ -427,103 +425,20 @@ function loadD3(){
 }
 
 async function loadData(){
-    const [topics, media] = await Promise.all([
-        loadJSON('topics.json', []),
-        loadJSON('media.json', {})
-    ]);
-    state.topics = topics;
-    state.media  = media;
+    state.topics = await loadJSON('topics.json', []);
 
     renderNav();
     await loadD3();
     renderGraph();
     refreshJournalForAuthState();
-
-    // --- new ---
-    handleRoute();
-    window.addEventListener('hashchange', handleRoute);
+    updateGameFabVisibility();
 }
 
-/* ---------------------------------------------------------
-Media registry helpers
-Every media file gets one entry in media.json: "key": "path".
-Topics reference media by key, never by raw path, so moving or
-renaming a file only means editing media.json in one place.
---------------------------------------------------------- */
-
-/** Resolve a media key to its real path. Returns '' (and warns) if missing. */
-function M(key){
-    const path = state.media[key];
-    if(!path){
-        console.warn(`media.json has no entry for key "${key}"`);
-        return '';
-    }
-    return path;
-}
-
-/**
- * Build an HTML string for a media block, so topic content never needs
- * raw <img>/<audio>/<video> tags. Usage inside a topic's `content`
- * string (or content array — see renderTopicBody):
- *   mediaTag('image', 'labradorite-1', { alt: 'Labradorite specimen' })
- *
- * type: 'image' | 'audio' | 'video'
- * key:  a key from media.json
- * opts: { alt, caption, controls (default true), autoplay, loop, muted, width, height }
- */
-function mediaTag(type, key, opts = {}){
-    const src = M(key);
-    if(!src) return '<p class="hint">Missing media: ' + escapeHtml(key) + '</p>';
-
-    const caption = opts.caption
-        ? `<figcaption>${escapeHtml(opts.caption)}</figcaption>` : '';
-
-    if(type === 'image'){
-        const alt = escapeHtml(opts.alt || opts.caption || key);
-        return `<figure class="media-figure"><img src="${src}" alt="${alt}" loading="lazy">${caption}</figure>`;
-    }
-    if(type === 'audio'){
-        const controls = opts.controls === false ? '' : 'controls';
-        return `<figure class="media-figure"><audio src="${src}" ${controls} ${opts.loop ? 'loop' : ''} preload="metadata"></audio>${caption}</figure>`;
-    }
-    if(type === 'video'){
-        const controls = opts.controls === false ? '' : 'controls';
-        return `<figure class="media-figure"><video src="${src}" ${controls} ${opts.autoplay ? 'autoplay' : ''} ${opts.loop ? 'loop' : ''} ${opts.muted ? 'muted' : ''} playsinline></video>${caption}</figure>`;
-    }
-    return '';
-}
-
-/**
- * Renders a topic's `content` field. Supports two forms:
- *  - String: raw HTML (existing topics keep working unchanged).
- *  - Array of blocks: e.g.
- *      [
- *        { "type": "text",  "html": "<p>Some paragraph</p>" },
- *        { "type": "image", "key": "labradorite-1", "caption": "Found June 2026" },
- *        { "type": "audio", "key": "cover-track-1", "caption": "Rough take, take 3" },
- *        { "type": "video", "key": "site-demo-clip" }
- *      ]
- *    This is the easy path for adding media without writing HTML.
- */
-function renderTopicBody(topic){
-    const content = topic.content;
-
-    if(typeof content === 'string' || !content){
-        return content || '<p class="hint">No content yet.</p>';
-    }
-
-    if(Array.isArray(content)){
-        return content.map(block => {
-            if(block.type === 'text')  return block.html || '';
-            if(block.type === 'image') return mediaTag('image', block.key, block);
-            if(block.type === 'audio') return mediaTag('audio', block.key, block);
-            if(block.type === 'video') return mediaTag('video', block.key, block);
-            return '';
-        }).join('');
-    }
-
-    return '<p class="hint">No content yet.</p>';
-}
+/* Note: media.json / topic-content rendering (image, audio, video
+   blocks) is no longer needed here — each topic now has its own
+   static page generated by build-pages.js, which renders that
+   content at build time. This script only needs topics.json for
+   the graph nodes and nav list (name, slug, category). */
 
 /* ---------------------------------------------------------
 Hidden slide-out menu
@@ -561,13 +476,10 @@ function renderNav(){
     list.innerHTML = '';
     visibleTopics().forEach(topic => {
         const li = document.createElement('li');
-        const btn = document.createElement('button');
-        btn.textContent = topic.name;
-        btn.addEventListener('click', () => {
-            window._closeMenu();
-            openContentPanel(topic);
-        });
-        li.appendChild(btn);
+        const link = document.createElement('a');
+        link.href = `/${topic.slug}/`;
+        link.textContent = topic.name;
+        li.appendChild(link);
         list.appendChild(li);
     });
 }
@@ -577,57 +489,58 @@ function visibleTopics(){
 }
 
 /* ---------------------------------------------------------
-Content panel (modal)
+Node hover tooltip — a small floating "cloud" that previews a
+topic's name/category on hover, replacing the old click-to-open
+popup. Clicking a node now navigates straight to that topic's
+own page (see renderGraph's node click handler below).
 --------------------------------------------------------- */
-function initContentPanel(){
-    const panel = document.getElementById('contentPanel');
-    const scrim = document.getElementById('contentScrim');
-    const closeBtn = document.getElementById('closePanel');
-
-    function close(){
-        panel.classList.remove('show');
-        scrim.classList.remove('show');
-        panel.setAttribute('aria-hidden','true');
-    }
-
-    closeBtn.addEventListener('click', close);
-    scrim.addEventListener('click', close);
-    document.addEventListener('keydown', e => {
-        if(e.key === 'Escape') close();
-    });
-    window._closeContentPanel = close;
+function initNodeTooltip(){
+    const tooltip = document.getElementById('nodeTooltip');
+    const section = document.getElementById('graphSection');
+    if(!tooltip || !section) return;
+    window._nodeTooltipEl = tooltip;
+    window._nodeTooltipSection = section;
 }
 
-function openContentPanel(topic){
-    const panel = document.getElementById('contentPanel');
-    const scrim = document.getElementById('contentScrim');
-    const category = document.getElementById('contentCategory');
-    const title = document.getElementById('contentTitle');
-    const body = document.getElementById('contentBody');
+function showNodeTooltip(topic, clientX, clientY){
+    const tooltip = window._nodeTooltipEl;
+    const section = window._nodeTooltipSection;
+    if(!tooltip || !section) return;
 
-    category.textContent = topic.category ? `// ${topic.category}` : '// uncategorized';
-    category.style.color = CATEGORY_COLORS[topic.category] || CATEGORY_COLORS.default;
-    title.textContent = topic.name;
-    body.innerHTML = renderTopicBody(topic);
+    const nameEl = document.getElementById('nodeTooltipName');
+    const catEl = document.getElementById('nodeTooltipCategory');
+    nameEl.textContent = topic.name;
+    catEl.textContent = topic.category ? `// ${topic.category}` : '// uncategorized';
+    catEl.style.color = CATEGORY_COLORS[topic.category] || CATEGORY_COLORS.default;
 
-    // --- new: add a link to the full page ---
-    const fullLink = document.createElement('a');
-    fullLink.href = `#${topic.slug}`;
-    fullLink.textContent = 'Open full page';
-    fullLink.style.display = 'block';
-    fullLink.style.marginTop = '20px';
-    fullLink.style.color = 'var(--ochre)';
-    fullLink.style.fontFamily = 'var(--body)';
-    fullLink.style.fontSize = '14px';
-    fullLink.style.letterSpacing = '0.05em';
-    fullLink.style.textDecoration = 'none';
-    fullLink.style.borderBottom = '1px dotted var(--ochre)';
-    body.appendChild(fullLink);
+    const rect = section.getBoundingClientRect();
+    tooltip.hidden = false;
+    positionNodeTooltip(clientX - rect.left, clientY - rect.top, section);
+}
 
-    panel.classList.add('show');
-    scrim.classList.add('show');
-    panel.setAttribute('aria-hidden','false');
-    panel.querySelector('.content-panel-inner').scrollTop = 0;
+function positionNodeTooltip(localX, localY, section){
+    const tooltip = window._nodeTooltipEl;
+    if(!tooltip || tooltip.hidden) return;
+    const bounds = section.getBoundingClientRect();
+    const tw = tooltip.offsetWidth || 160;
+    const th = tooltip.offsetHeight || 50;
+
+    let x = localX + 18;
+    let y = localY - th - 14;
+    if(x + tw > bounds.width - 8) x = localX - tw - 18;
+    if(x < 8) x = 8;
+    if(y < 8) y = localY + 22;
+
+    tooltip.style.transform = `translate(${x}px, ${y}px)`;
+}
+
+function hideNodeTooltip(){
+    const tooltip = window._nodeTooltipEl;
+    if(tooltip) tooltip.hidden = true;
+}
+
+function goToTopicPage(topic){
+    window.location.href = `/${topic.slug}/`;
 }
 
 /* ---------------------------------------------------------
@@ -757,21 +670,36 @@ function renderGraph(){
     nodeSel
         .on('click', (event, d) => {
             if(gameState.active) return; // clicks don't drive the game anymore — dragging does
-            openContentPanel(d);
+            goToTopicPage(d);
         })
         .on('keydown', (event, d) => {
             if(event.key === 'Enter' || event.key === ' '){
                 event.preventDefault();
                 if(gameState.active) return;
-                openContentPanel(d);
+                goToTopicPage(d);
             }
         })
-        .on('mouseenter', function(){
+        .on('mouseenter', function(event, d){
             d3.select(this).select('circle').transition().duration(200).attr('r', 17);
+            if(!gameState.active) showNodeTooltip(d, event.clientX, event.clientY);
+        })
+        .on('mousemove', (event, d) => {
+            if(gameState.active) return;
+            const section = document.getElementById('graphSection');
+            const rect = section.getBoundingClientRect();
+            positionNodeTooltip(event.clientX - rect.left, event.clientY - rect.top, section);
         })
         .on('mouseleave', function(){
             d3.select(this).select('circle').transition().duration(200).attr('r', 14);
-        });
+            hideNodeTooltip();
+        })
+        .on('focus', function(event, d){
+            if(!gameState.active){
+                const rect = this.getBoundingClientRect();
+                showNodeTooltip(d, rect.left + rect.width / 2, rect.top);
+            }
+        })
+        .on('blur', hideNodeTooltip);
 
     graphState.svg = svg;
     graphState.zoomLayer = zoomLayer;
@@ -908,15 +836,14 @@ function updateGameFabVisibility(){
     const fab = document.getElementById('gameToggle');
     if (!fab) return;
 
-    const onMainPage = !window.location.hash;
     const anyOverlayOpen = [
-        'contentPanel', 'accountPanel', 'gameModal', 'oraclePanel', 'navPanel'
+        'gameModal', 'oraclePanel', 'navPanel'
     ].some(id => {
         const el = document.getElementById(id);
         return el && (el.classList.contains('show') || el.classList.contains('open'));
     });
 
-    fab.hidden = !onMainPage || anyOverlayOpen;
+    fab.hidden = anyOverlayOpen;
 }
 
 function initGame(){
@@ -946,14 +873,13 @@ function initGame(){
 
     // Track every overlay this site opens/closes so the fab's visibility
     // stays correct without having to thread calls through each handler.
-    const watchedIds = ['contentPanel', 'accountPanel', 'gameModal', 'oraclePanel', 'navPanel'];
+    const watchedIds = ['gameModal', 'oraclePanel', 'navPanel'];
     watchedIds.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         const observer = new MutationObserver(updateGameFabVisibility);
         observer.observe(el, { attributes: true, attributeFilter: ['class'] });
     });
-    window.addEventListener('hashchange', updateGameFabVisibility);
     updateGameFabVisibility();
 }
 
@@ -1201,6 +1127,7 @@ function initDrawing(){
 function startGame(){
     if(graphState.nodes.length < MIN_GAME_NODES) return;
     ensureAudio();
+    hideNodeTooltip();
 
     gameState.active = true;
     gameState.sequence = [];
@@ -1238,64 +1165,6 @@ function pickNextNode(){
         choice = pool[Math.floor(Math.random() * pool.length)];
     } while(pool.length > 1 && choice.id === last);
     return choice.id;
-}
-/* ---------------------------------------------------------
-Full‑page topic view — standalone page within the same SPA
---------------------------------------------------------- */
-function renderFullTopicPage(topic) {
-    const categoryColor = CATEGORY_COLORS[topic.category] || CATEGORY_COLORS.default;
-    return `
-        <div style="margin-bottom: 32px;">
-            <a href="#" onclick="history.back(); return false;" class="back-to-main-link">← Back to the main page</a>
-        </div>
-        <div class="content-eyebrow" style="color: ${categoryColor};">// ${topic.category || 'uncategorized'}</div>
-        <h1 style="font-family: var(--disp); font-size: clamp(2rem, 5vw, 3.2rem); margin: 0 0 24px; border-bottom: 1px solid var(--line); padding-bottom: 20px; color: var(--ink-0);">${topic.name}</h1>
-        <div class="content-body">${renderTopicBody(topic)}</div>
-    `;
-}
-
-function showFullTopic(slug) {
-    const topic = state.topics.find(t => t.slug === slug && t.show !== false);
-    if (!topic) {
-        // Invalid hash – go back to graph
-        window.location.hash = '';
-        return;
-    }
-
-    // Hide graph & journal, show full container
-    document.getElementById('graphSection').style.display = 'none';
-    document.getElementById('journalLog').style.display = 'none';
-    const container = document.getElementById('fullTopicContainer');
-    container.style.display = 'block';
-    container.innerHTML = renderFullTopicPage(topic);
-
-    // Update page title
-    document.title = `:: ${topic.name} — Bariumana`;
-    // Close any open popup/menu
-    if (document.getElementById('contentPanel').classList.contains('show')) {
-        window._closeContentPanel && window._closeContentPanel();
-    }
-    if (document.getElementById('navPanel').classList.contains('open')) {
-        window._closeMenu && window._closeMenu();
-    }
-}
-
-function showGraphView() {
-    document.getElementById('graphSection').style.display = 'block';
-    document.getElementById('journalLog').style.display = '';
-    document.getElementById('fullTopicContainer').style.display = 'none';
-    document.title = ':: Jenny Barium\'s personal website. from Bariumana!';
-    // Optionally re-render graph if needed? Already rendered.
-}
-
-function handleRoute() {
-    const hash = window.location.hash.slice(1); // remove '#'
-    if (hash) {
-        showFullTopic(hash);
-    } else {
-        showGraphView();
-    }
-    updateGameFabVisibility();
 }
 function nextRound(){
     // clear the previous round's drawing before showing the new pattern

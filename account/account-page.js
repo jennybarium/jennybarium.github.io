@@ -1,48 +1,20 @@
 /* ─────────────────────────────────────────────────────────────────
-   account-ui.js
-   Wires the account/login/chat panel markup to the Auth/Chat API
-   defined in auth-chat.js. Follows the same open/close (.show class
-   + scrim) convention used elsewhere on the site (script.js).
+   account-page.js
+   Standalone /account/ page version of the login/register/chat UI.
+   Same logic as the old in-page account panel (account-ui.js), just
+   without the open/close/scrim/dot machinery — this is a real page
+   now, not a modal, and there's no game FAB or journal panel here.
    ───────────────────────────────────────────────────────────────── */
 
 let chatPollTimer = null;
 let lastMessageTs = 0;
 const seenMessageKeys = new Set();
 let knownUsers = new Set();
-let knownUsersLoadedAt = 0;
 
-function initAccountPanel(){
-    const toggle = document.getElementById('accountToggle');
-    const panel = document.getElementById('accountPanel');
-    const scrim = document.getElementById('accountScrim');
-    const closeBtn = document.getElementById('closeAccount');
-
-    function open(){
-        panel.classList.add('show');
-        scrim.classList.add('show');
-        panel.setAttribute('aria-hidden', 'false');
-        refreshAccountView();
-    }
-    function close(){
-        panel.classList.remove('show');
-        scrim.classList.remove('show');
-        panel.setAttribute('aria-hidden', 'true');
-    }
-
-    toggle.addEventListener('click', () => {
-        panel.classList.contains('show') ? close() : open();
-    });
-    closeBtn.addEventListener('click', close);
-    scrim.addEventListener('click', close);
-    window._closeAccountPanel = close;
-
+function initAccountPage(){
     wireForms();
-    updateAccountDot();
     refreshAccountView();
 
-    // If already logged in from a previous visit, start polling quietly
-    // in the background so the unread dot can light up even before the
-    // panel is opened.
     if (window.Auth.isLoggedIn()) startPolling();
 }
 
@@ -104,7 +76,6 @@ function wireForms(){
         setBtnLoading(btn, true);
         try {
             await window.Auth.register(username, password);
-            // auto-login right after registering
             await window.Auth.login(username, password);
             registerForm.reset();
             document.getElementById('loggedOutView').hidden = true;
@@ -151,9 +122,6 @@ function wireForms(){
     wireRecipientCheck();
 }
 
-/* Live ✅ / ❌ next to the "to" field, checked against the already-loaded
-   user list (no per-keystroke network call). Debounced lightly so rapid
-   typing doesn't flicker the indicator. */
 function wireRecipientCheck(){
     const toEl = document.getElementById('chatTo');
     const statusEl = document.getElementById('chatToStatus');
@@ -220,7 +188,7 @@ function refreshAccountView(){
         document.getElementById('whoami').textContent = window.Auth.getUsername();
         document.getElementById('chatLog').innerHTML = '';
         seenMessageKeys.clear();
-        pollOnce(); // immediate refresh when opening
+        pollOnce();
         refreshKnownUsers();
         renderChatLogEmptyState();
     } else {
@@ -228,21 +196,13 @@ function refreshAccountView(){
         loggedIn.hidden = true;
         resetAccountSubView();
     }
-
-    // the diary is login-gated site-wide, not just inside this panel —
-    // keep it in sync with whatever just happened (login, register, logout)
-    if (window.refreshJournalForAuthState) window.refreshJournalForAuthState();
 }
 
-/* Loads the visible user list once per panel-open (cheap, already-
-   authenticated endpoint) so the "to" field can show a live ✅ / ❌
-   without hitting the network on every keystroke. */
 async function refreshKnownUsers(){
     if (!window.Auth.isLoggedIn()) return;
     try {
         const users = await window.Chat.listUsers();
         knownUsers = new Set(users);
-        knownUsersLoadedAt = Date.now();
         const datalist = document.getElementById('knownUsersList');
         if (datalist) {
             datalist.innerHTML = '';
@@ -305,26 +265,19 @@ function appendChatLine(msg, isOutgoing){
 async function pollOnce(){
     if (!window.Auth.isLoggedIn()) return;
     try {
-        const { messages, serverTime } = await window.Chat.poll(lastMessageTs);
+        const { messages } = await window.Chat.poll(lastMessageTs);
         messages.forEach(m => appendChatLine(m, false));
         if (messages.length) {
             lastMessageTs = Math.max(...messages.map(m => m.ts));
-            if (!document.getElementById('accountPanel').classList.contains('show')) {
-                document.getElementById('accountDot').hidden = false;
-            }
         }
     } catch (e) {
-        // silent — polling errors shouldn't interrupt the rest of the site
+        // silent — polling errors shouldn't interrupt the rest of the page
     }
 }
 
 function startPolling(){
     stopPolling();
     pollOnce();
-    // 30s poll — chat reads used to be the main KV-read driver (a list()
-    // plus one get() per unread message, every 8s, per open panel).
-    // Combined with the metadata-based poll on the Worker side, this
-    // keeps chat comfortably inside the free-tier daily KV limits.
     chatPollTimer = setInterval(pollOnce, 30000);
 }
 function stopPolling(){
@@ -332,17 +285,9 @@ function stopPolling(){
     chatPollTimer = null;
 }
 
-function updateAccountDot(){
-    const dot = document.getElementById('accountDot');
-    const toggle = document.getElementById('accountToggle');
-    if (!dot || !toggle) return;
-    toggle.addEventListener('click', () => { dot.hidden = true; });
-}
-
 /* Applies Worker-driven site config: if maintenanceMode is on,
-   disables the account panel's forms rather than pretending the
-   backend still works. Fails open (site behaves normally) if the
-   config fetch itself fails. */
+   disables the forms rather than pretending the backend still works.
+   Fails open (page behaves normally) if the config fetch itself fails. */
 async function applySiteConfig(){
     if (!window.SiteConfig) return;
     const config = await window.SiteConfig.load();
@@ -364,7 +309,6 @@ async function applySiteConfig(){
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    initAccountPanel();
+    initAccountPage();
     applySiteConfig();
-    window.sendVisitBeacon && window.sendVisitBeacon();
 });

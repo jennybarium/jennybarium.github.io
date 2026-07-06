@@ -547,6 +547,7 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: 50%;
   background: rgba(18,26,38,0.78);
   border: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   color: var(--ochre);
   display: flex;
   align-items: center;
@@ -993,6 +994,51 @@ button { font-family: inherit; cursor: pointer; }
   text-align: center; font-style: italic;
 }
 @media (max-width:640px){ .graph-hint{ display:none; } }
+
+/* Node hover tooltip — a small floating "cloud" preview shown on
+   hover/focus of a graph node. Clicking the node navigates to its
+   own page; this is preview-only and never intercepts the click. */
+.node-tooltip {
+  position: absolute;
+  top: 0; left: 0;
+  z-index: 40;
+  pointer-events: none;
+  max-width: 220px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(18,26,38,0.92);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  transition: opacity .12s ease;
+}
+.node-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -6px; left: 22px;
+  width: 12px; height: 12px;
+  background: rgba(18,26,38,0.92);
+  border: 1px solid var(--line);
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+  border-radius: 0 0 3px 0;
+}
+.node-tooltip-category {
+  font-family: var(--body);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.node-tooltip-name {
+  font-family: var(--disp);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-0);
+  line-height: 1.25;
+}
+@media (max-width:640px){ .node-tooltip{ display:none; } }
 .node-label {
   font-family: var(--disp); font-size: 12px; fill: var(--ink-1);
   pointer-events: none; letter-spacing: .03em;

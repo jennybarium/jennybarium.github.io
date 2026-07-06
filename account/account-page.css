@@ -1,0 +1,15 @@
+/* =========================================================
+   account-page.css
+   Layout for the standalone /account/ page. The form/chat
+   controls themselves reuse .account-* / .chat-* / .game-btn
+   rules already defined in /style.css (originally written for
+   the in-page modal) — this file only adds page-level spacing.
+   ========================================================= */
+
+.account-page-main {
+  max-width: 560px;
+}
+
+.account-view-wrap {
+  margin-top: 8px;
+}

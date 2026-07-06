@@ -15,6 +15,8 @@
     { "title": "Pyongyang FM 105.2 🇰🇵", "src": "https://listen7.myradio24.com/69366" },
     { "title": "Indie X FM 🇺🇸", "src": "https://kathy.torontocast.com:2695/stream" },
     { "title": "La Radio Allumée 103.3 FM - CHAA 🇨🇦", "src": "https://arcq.streamb.live/SB00211" },
-    { "title": "Qazaq Radiosy 🇰🇿", "src": "https://radio-streams.kaztrk.kz/qazradio/qazradio/icecast.audio" }  
+    { "title": "Qazaq Radiosy 🇰🇿", "src": "https://radio-streams.kaztrk.kz/qazradio/qazradio/icecast.audio" },  
+    { "title": "J1 Radio 🇯🇵", "src": "https://jenny.torontocast.com:2000/stream/J1HITS" },
+    { "title": "Radio Romanista FM 97.7 🇮🇹", "src": "https://romanista.newradio.it/stream" }
   ]
 }
